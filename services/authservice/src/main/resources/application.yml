@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: authservice
+
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:turnout_db}?currentSchema=auth
+    username: ${DB_USERNAME:turnout}
+    password: ${DB_PASSWORD:turnout_pass}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+        format_sql: false
+    show-sql: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 1
+          max-wait: -1ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+server:
+  port: 8081
+  compression:
+    enabled: true
+    mime-types: application/json
+
+turnout:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:900000}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:2592000000}
+
+  otp:
+    expiry-minutes: 10
+    max-attempts: 3
+
+  reset:
+    token-expiry-minutes: 15
+
+  brevo:
+    api-key: ${BREVO_API_KEY}
+    api-url: https://api.brevo.com/v3/smtp/email
+    sender-email: ${BREVO_SENDER_EMAIL:noreply@turnout.app}
+    sender-name: ${BREVO_SENDER_NAME:Turnout}
+
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+logging:
+  level:
+    root: INFO
+    com.turnout: INFO
+    org.hibernate.SQL: WARN
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    root: DEBUG
+    com.turnout: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
