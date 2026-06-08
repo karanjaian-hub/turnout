@@ -1,0 +1,24 @@
+# Build output — never copy target folders into Docker build context
+**/target/
+**/.mvn/
+
+# IDE files
+**/.idea/
+**/*.iml
+**/.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Docs
+*.md
+docs/
+
+# Environment — secrets must never be baked into images
+.env
+.env.*
+
+# OS
+**/.DS_Store
+**/Thumbs.db
