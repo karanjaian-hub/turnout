@@ -90,6 +90,8 @@ services:
     build:
       context: .
       dockerfile: api-gateway/Dockerfile
+      args:
+        SERVICE_PATH: api-gateway
     container_name: turnout_api_gateway
     restart: unless-stopped
     ports:
@@ -113,7 +115,11 @@ services:
       - turnout-network
 
   authservice:
-    build: ./services/authservice
+    build:
+      context: .
+      dockerfile: services/authservice/Dockerfile
+      args:
+        SERVICE_PATH: services/authservice
     container_name: turnout_authservice
     restart: unless-stopped
     ports:
@@ -137,7 +143,11 @@ services:
       - turnout-network
 
   eventservice:
-    build: ./services/eventservice
+    build:
+      context: .
+      dockerfile: services/eventservice/Dockerfile
+      args:
+        SERVICE_PATH: services/eventservice
     container_name: turnout_eventservice
     restart: unless-stopped
     ports:
@@ -162,7 +172,11 @@ services:
       - turnout-network
 
   guestservice:
-    build: ./services/guestservice
+    build:
+      context: .
+      dockerfile: services/guestservice/Dockerfile
+      args:
+        SERVICE_PATH: services/guestservice
     container_name: turnout_guestservice
     restart: unless-stopped
     ports:
@@ -187,7 +201,11 @@ services:
       - turnout-network
 
   emailservice:
-    build: ./services/emailservice
+    build:
+      context: .
+      dockerfile: services/emailservice/Dockerfile
+      args:
+        SERVICE_PATH: services/emailservice
     container_name: turnout_emailservice
     restart: unless-stopped
     ports:
@@ -209,7 +227,11 @@ services:
       - turnout-network
 
   rsvpservice:
-    build: ./services/rsvpservice
+    build:
+      context: .
+      dockerfile: services/rsvpservice/Dockerfile
+      args:
+        SERVICE_PATH: services/rsvpservice
     container_name: turnout_rsvpservice
     restart: unless-stopped
     ports:
@@ -234,7 +256,11 @@ services:
       - turnout-network
 
   notificationservice:
-    build: ./services/notificationservice
+    build:
+      context: .
+      dockerfile: services/notificationservice/Dockerfile
+      args:
+        SERVICE_PATH: services/notificationservice
     container_name: turnout_notificationservice
     restart: unless-stopped
     ports:
@@ -254,7 +280,11 @@ services:
       - turnout-network
 
   paymentservice:
-    build: ./services/paymentservice
+    build:
+      context: .
+      dockerfile: services/paymentservice/Dockerfile
+      args:
+        SERVICE_PATH: services/paymentservice
     container_name: turnout_paymentservice
     restart: unless-stopped
     ports:
@@ -284,7 +314,11 @@ services:
       - turnout-network
 
   aiservice:
-    build: ./services/aiservice
+    build:
+      context: .
+      dockerfile: services/aiservice/Dockerfile
+      args:
+        SERVICE_PATH: services/aiservice
     container_name: turnout_aiservice
     restart: unless-stopped
     ports:
