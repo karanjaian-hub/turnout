@@ -1,9 +1,3 @@
-# =============================================================================
-# Stage 1 — Build
-# Maven compiles the code and packages it into a JAR
-# We use a separate build stage so the final image doesn't carry Maven,
-# source code, or any build tools — keeps it small and secure
-# =============================================================================
 FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app

@@ -25,7 +25,6 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Stored as BCrypt hash — never plaintext
     @Column(nullable = false)
     private String password;
 

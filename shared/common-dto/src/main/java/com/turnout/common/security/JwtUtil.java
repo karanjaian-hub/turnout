@@ -79,6 +79,10 @@ public class JwtUtil {
         return role != null ? UserRole.valueOf(role) : null;
     }
 
+    public java.util.Date extractExpiration(String token) {
+        return extractAllClaims(token).getExpiration();
+    }
+
     public String extractJti(String token) {
         return extractAllClaims(token).get(CLAIM_JTI, String.class);
     }
