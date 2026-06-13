@@ -2,6 +2,10 @@ package com.turnout.apigateway.config;
 
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
+import com.turnout.common.security.JwtProperties;
+import com.turnout.common.security.JwtUtil;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -39,6 +43,7 @@ public class GatewayConfig {
     // The JWT blacklist check in JwtAuthenticationFilter uses this.
     // Must be reactive (not the blocking RedisTemplate) because WebFlux
     // cannot block a Reactor thread — it would deadlock under load.
+    @Primary
     @Bean
     public ReactiveRedisTemplate<String, String> reactiveRedisTemplate(
             ReactiveRedisConnectionFactory factory) {
@@ -48,5 +53,17 @@ public class GatewayConfig {
                         .value(serializer)
                         .build();
         return new ReactiveRedisTemplate<>(factory, context);
+    }
+
+    @Bean
+    public JwtProperties jwtProperties(@Value("${turnout.jwt.secret}") String secret) {
+        JwtProperties props = new JwtProperties();
+        props.setSecret(secret);
+        return props;
+    }
+
+    @Bean
+    public JwtUtil jwtUtil(JwtProperties jwtProperties) {
+        return new JwtUtil(jwtProperties);
     }
 }

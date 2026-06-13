@@ -1,0 +1,67 @@
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ─── Tailwind directives ───────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Global resets ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Smooth scrolling everywhere */
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  /* Prevents layout shift when a scrollbar appears/disappears */
+  overflow-y: scroll;
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────────────────────── */
+/* Why: the default OS scrollbar looks out of place in a polished admin panel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E3A5F;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2563EB;
+}
+
+/* ─── Smooth transitions on interactive elements ───────────────────────────── */
+/* Why: without this, hover state changes are jarring — they snap instead of fade */
+a, button, input, select, textarea {
+  transition: all 150ms ease;
+}
+
+/* ─── Typography defaults ───────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: #1E3A5F;
+}
+
+/* ─── Utility: hide the number input spinners ───────────────────────────────── */
+/* They look terrible in custom inputs */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}

@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: aiservice
+
+  threads:
+    virtual:
+      enabled: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 1
+
+server:
+  port: 8088
+
+turnout:
+  groq:
+    api-key: ${GROQ_API_KEY}
+    api-url: https://api.groq.com/openai/v1/chat/completions
+    model: llama-3.3-70b-versatile
+    max-tokens: 1500
+    # 0.7: creative enough for copywriting, grounded enough for data forecasts
+    temperature: 0.7
+  ai:
+    # Same input = same output for AI calls, so 30min cache is safe and saves Groq quota
+    cache-ttl-minutes: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.turnout.aiservice: INFO
+    org.springframework.web: WARN
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    redis:
+      host: redis

@@ -41,19 +41,17 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ── auth.users ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS auth.users (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email               VARCHAR(255) NOT NULL UNIQUE,
-    password_hash       VARCHAR(255) NOT NULL,
-    first_name          VARCHAR(100) NOT NULL,
-    last_name           VARCHAR(100) NOT NULL,
-    phone               VARCHAR(20),
-    role                auth.user_role    NOT NULL DEFAULT 'EVENT_ORGANIZER',
-    account_status      auth.account_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
-    otp_code            VARCHAR(6),
-    otp_expires_at      TIMESTAMP,
-    last_login_at       TIMESTAMP,
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username        VARCHAR(100) NOT NULL UNIQUE,
+    email           VARCHAR(255) NOT NULL UNIQUE,
+    password        VARCHAR(255) NOT NULL,
+    full_name       VARCHAR(255) NOT NULL,
+    role            auth.user_role NOT NULL DEFAULT 'EVENT_ORGANIZER',
+    status          auth.account_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    email_verified  BOOLEAN NOT NULL DEFAULT FALSE,
+    last_login_at   TIMESTAMP,
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON auth.users(email);
@@ -62,20 +60,19 @@ CREATE INDEX IF NOT EXISTS idx_users_role  ON auth.users(role);
 -- ── events.events ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS events.events (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organizer_id        UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_by          UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     title               VARCHAR(255) NOT NULL,
     description         TEXT,
-    location            VARCHAR(500),
+    location            VARCHAR(500) NOT NULL,
     event_date          TIMESTAMP NOT NULL,
     max_capacity        INTEGER,
     current_rsvp_count  INTEGER NOT NULL DEFAULT 0,
     status              events.event_status NOT NULL DEFAULT 'DRAFT',
-    cover_image_url     VARCHAR(500),
     created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_events_organizer_id ON events.events(organizer_id);
+CREATE INDEX IF NOT EXISTS idx_events_created_by ON events.events(created_by);
 CREATE INDEX IF NOT EXISTS idx_events_status       ON events.events(status);
 CREATE INDEX IF NOT EXISTS idx_events_event_date   ON events.events(event_date);
 
@@ -85,7 +82,7 @@ CREATE TABLE IF NOT EXISTS events.audit_logs (
     event_id    UUID NOT NULL REFERENCES events.events(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL,
     action      VARCHAR(100) NOT NULL,
-    details     JSONB,
+    details          TEXT,
     created_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -199,22 +196,24 @@ ON CONFLICT (name) DO NOTHING;
 
 -- ── Seed: SUPER_ADMIN ─────────────────────────────────────────────────────────
 -- Password: Admin@1234 (BCrypt hashed)
-INSERT INTO auth.users (email, password_hash, first_name, last_name, role, account_status)
+INSERT INTO auth.users (username, email, password, full_name, role, status, email_verified)
 VALUES (
+    'super_admin',
     'superadmin@turnout.com',
     '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LxuS2',
-    'Super', 'Admin',
-    'SUPER_ADMIN', 'ACTIVE'
+    'Super Admin',
+    'SUPER_ADMIN', 'ACTIVE', TRUE
 )
 ON CONFLICT (email) DO NOTHING;
 
 -- ── Seed: ADMIN ───────────────────────────────────────────────────────────────
 -- Password: Admin@1234 (BCrypt hashed)
-INSERT INTO auth.users (email, password_hash, first_name, last_name, role, account_status)
+INSERT INTO auth.users (username, email, password, full_name, role, status, email_verified)
 VALUES (
+    'turnout_admin',
     'admin@turnout.com',
     '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LxuS2',
-    'Turnout', 'Admin',
-    'ADMIN', 'ACTIVE'
+    'Turnout Admin',
+    'ADMIN', 'ACTIVE', TRUE
 )
 ON CONFLICT (email) DO NOTHING;

@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: guestservice
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:turnout_db}?currentSchema=guests
+    username: ${POSTGRES_USER:turnout}
+    password: ${POSTGRES_PASSWORD:turnout}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: guests
+        format_sql: false
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+server:
+  port: 8083
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+turnout:
+  guest:
+    token-expiry-days: 30
+    batch-size: 500
+  jwt:
+    secret: ${JWT_SECRET}
+  event-service:
+    url: http://eventservice:8082
+
+  event-service:
+    url: ${EVENT_SERVICE_URL:http://eventservice:8082}

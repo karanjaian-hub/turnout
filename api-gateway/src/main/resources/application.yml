@@ -58,42 +58,42 @@ spring:
           predicates:
             - Path=/api/events/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: guests
           uri: http://${GUEST_SERVICE_HOST:guestservice}:8083
           predicates:
             - Path=/api/guests/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: emails
           uri: http://${EMAIL_SERVICE_HOST:emailservice}:8084
           predicates:
             - Path=/api/emails/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: admin
           uri: http://${NOTIFICATION_SERVICE_HOST:notificationservice}:8086
           predicates:
             - Path=/api/admin/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: payments
           uri: http://${PAYMENT_SERVICE_HOST:paymentservice}:8087
           predicates:
             - Path=/api/payments/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: ai
           uri: http://${AI_SERVICE_HOST:aiservice}:8088
           predicates:
             - Path=/api/ai/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
 turnout:
   jwt:
@@ -152,39 +152,39 @@ spring:
           predicates:
             - Path=/api/events/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: guests
           uri: http://localhost:8083
           predicates:
             - Path=/api/guests/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: emails
           uri: http://localhost:8084
           predicates:
             - Path=/api/emails/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: admin
           uri: http://localhost:8086
           predicates:
             - Path=/api/admin/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: payments
           uri: http://localhost:8087
           predicates:
             - Path=/api/payments/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
 
         - id: ai
           uri: http://localhost:8088
           predicates:
             - Path=/api/ai/**
           filters:
-            - JwtAuthFilter
+            - JwtAuthentication
