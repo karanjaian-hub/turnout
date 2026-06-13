@@ -1,9 +1,7 @@
 package com.turnout.aiservice.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component
 @ConfigurationProperties(prefix = "turnout.groq")
 public class GroqProperties {
 
