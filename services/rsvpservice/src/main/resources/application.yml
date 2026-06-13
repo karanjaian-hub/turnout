@@ -6,8 +6,8 @@ spring:
       enabled: true
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:turnout_db}?currentSchema=guests
-    username: ${DB_USER:turnout}
-    password: ${DB_PASSWORD:turnout}
+    username: ${DB_USERNAME:turnout_user}
+    password: ${DB_PASSWORD:turnout_pass}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
