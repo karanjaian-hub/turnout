@@ -1,13 +1,16 @@
-	package com.turnout.notificationservice;
+package com.turnout.notificationservice;
 
-	import org.springframework.boot.SpringApplication;
-	import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 
-	@SpringBootApplication
-	public class NotificationserviceApplication {
-
-		public static void main(String[] args) {
-			SpringApplication.run(NotificationserviceApplication.class, args);
-		}
-
-	}
+@SpringBootApplication(exclude = {
+        DataSourceAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class
+})
+public class NotificationserviceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(NotificationserviceApplication.class, args);
+    }
+}

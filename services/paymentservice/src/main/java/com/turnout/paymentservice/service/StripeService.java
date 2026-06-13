@@ -11,7 +11,6 @@ import com.turnout.paymentservice.enums.PaymentProvider;
 import com.turnout.paymentservice.enums.PaymentStatus;
 import com.turnout.paymentservice.repository.PaymentTransactionRepository;
 import com.turnout.paymentservice.repository.SubscriptionPlanRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -34,7 +33,6 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class StripeService {
 
     private final StripeProperties              stripeProps;
@@ -43,19 +41,28 @@ public class StripeService {
     private final SubscriptionService           subscriptionService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper                  objectMapper;
+    private final WebClient                     stripeWebClient;
 
-    @Qualifier("stripeWebClient")
-    private final WebClient stripeWebClient;
+    // Manual constructor — @Qualifier on a field is ignored by @RequiredArgsConstructor
+    public StripeService(
+            StripeProperties stripeProps,
+            PaymentTransactionRepository transactionRepo,
+            SubscriptionPlanRepository planRepo,
+            SubscriptionService subscriptionService,
+            KafkaTemplate<String, Object> kafkaTemplate,
+            ObjectMapper objectMapper,
+            @Qualifier("stripeWebClient") WebClient stripeWebClient) {
+        this.stripeProps         = stripeProps;
+        this.transactionRepo     = transactionRepo;
+        this.planRepo            = planRepo;
+        this.subscriptionService = subscriptionService;
+        this.kafkaTemplate       = kafkaTemplate;
+        this.objectMapper        = objectMapper;
+        this.stripeWebClient     = stripeWebClient;
+    }
 
-    // ------------------------------------------------------------------ //
-    //  Checkout Session                                                    //
-    // ------------------------------------------------------------------ //
+    // ── Checkout Session ──────────────────────────────────────────────────────
 
-    /**
-     * Creates a Stripe-hosted checkout page for the user.
-     * We send them to Stripe's UI — we never handle card details ourselves.
-     * WHY form-encoded not JSON: Stripe's v1 API uses application/x-www-form-urlencoded.
-     */
     public StripeSessionResponse createCheckoutSession(UUID userId,
                                                        UUID planId,
                                                        String successUrl,
@@ -64,7 +71,6 @@ public class StripeService {
         SubscriptionPlan plan = planRepo.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("SubscriptionPlan", planId));
 
-        // Stripe expects amounts in the smallest currency unit (cents for USD)
         long amountCents = plan.getMonthlyPriceUsd()
                 .multiply(BigDecimal.valueOf(100))
                 .longValue();
@@ -94,7 +100,6 @@ public class StripeService {
         String sessionId   = response.path("id").asText();
         String checkoutUrl = response.path("url").asText();
 
-        // Persist as PENDING — updated when Stripe fires checkout.session.completed webhook
         PaymentTransaction transaction = PaymentTransaction.builder()
                 .userId(userId)
                 .planId(planId)
@@ -110,16 +115,8 @@ public class StripeService {
         return new StripeSessionResponse(sessionId, checkoutUrl);
     }
 
-    // ------------------------------------------------------------------ //
-    //  Webhook                                                             //
-    // ------------------------------------------------------------------ //
+    // ── Webhook ───────────────────────────────────────────────────────────────
 
-    /**
-     * Stripe POSTs signed events to /api/payments/stripe/webhook.
-     * We verify the signature before trusting any payload.
-     * WHY manual HMAC: we're not using the Stripe Java SDK — this keeps
-     * the service lean and teaches you how webhook verification works.
-     */
     public void processWebhook(String payload, String stripeSignature) {
         if (!isValidStripeSignature(payload, stripeSignature)) {
             log.warn("Stripe webhook signature verification failed");
@@ -140,9 +137,7 @@ public class StripeService {
         }
     }
 
-    // ------------------------------------------------------------------ //
-    //  Private helpers                                                     //
-    // ------------------------------------------------------------------ //
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private void handleCheckoutCompleted(JsonNode event) {
         JsonNode session   = event.path("data").path("object");
@@ -172,24 +167,19 @@ public class StripeService {
         });
     }
 
-    /**
-     * Stripe's webhook signature format:
-     *   Stripe-Signature: t=<timestamp>,v1=<hmac>
-     * We recompute HMAC-SHA256(timestamp + "." + payload) and compare.
-     */
     private boolean isValidStripeSignature(String payload, String stripeSignature) {
         try {
             String timestamp = extractSignatureComponent(stripeSignature, "t");
             String expected  = extractSignatureComponent(stripeSignature, "v1");
+            String signed    = timestamp + "." + payload;
 
-            String signedPayload = timestamp + "." + payload;
-            Mac    mac           = Mac.getInstance("HmacSHA256");
+            Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(
                     stripeProps.getWebhookSecret().getBytes(StandardCharsets.UTF_8),
                     "HmacSHA256"
             ));
             String computed = HexFormat.of().formatHex(
-                    mac.doFinal(signedPayload.getBytes(StandardCharsets.UTF_8))
+                    mac.doFinal(signed.getBytes(StandardCharsets.UTF_8))
             );
             return computed.equals(expected);
         } catch (Exception e) {
@@ -201,29 +191,25 @@ public class StripeService {
     private String extractSignatureComponent(String header, String key) {
         for (String part : header.split(",")) {
             String[] kv = part.strip().split("=", 2);
-            if (kv.length == 2 && kv[0].equals(key)) {
-                return kv[1];
-            }
+            if (kv.length == 2 && kv[0].equals(key)) return kv[1];
         }
         return "";
     }
 
     private void publishSubscriptionUpgraded(UUID userId, UUID planId, PaymentProvider provider) {
-        Map<String, Object> event = Map.of(
+        kafkaTemplate.send("subscription.upgraded", userId.toString(), Map.of(
                 "userId",    userId.toString(),
                 "planId",    planId.toString(),
                 "provider",  provider.name(),
                 "timestamp", LocalDateTime.now().toString()
-        );
-        kafkaTemplate.send("subscription.upgraded", userId.toString(), event);
+        ));
     }
 
     private void publishPaymentFailed(UUID userId, UUID planId) {
-        Map<String, Object> event = Map.of(
+        kafkaTemplate.send("payment.failed", userId.toString(), Map.of(
                 "userId",    userId.toString(),
                 "planId",    planId.toString(),
                 "timestamp", LocalDateTime.now().toString()
-        );
-        kafkaTemplate.send("payment.failed", userId.toString(), event);
+        ));
     }
 }

@@ -4,11 +4,9 @@ import com.turnout.common.exception.ResourceNotFoundException;
 import com.turnout.common.exception.TierLimitExceededException;
 import com.turnout.paymentservice.dto.TierLimitsResponse;
 import com.turnout.paymentservice.entity.SubscriptionPlan;
-import com.turnout.paymentservice.entity.UserSubscription;
-import com.turnout.paymentservice.enums.SubscriptionStatus;
 import com.turnout.paymentservice.repository.SubscriptionPlanRepository;
 import com.turnout.paymentservice.repository.UserSubscriptionRepository;
-import lombok.RequiredArgsConstructor;
+import com.turnout.paymentservice.enums.SubscriptionStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -18,20 +16,22 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TierCheckService {
 
     private final UserSubscriptionRepository subscriptionRepo;
     private final SubscriptionPlanRepository planRepo;
+    private final WebClient                  eventServiceWebClient;
 
-    @Qualifier("eventServiceWebClient")
-    private final WebClient eventServiceWebClient;
+    // Manual constructor — @Qualifier on a field is ignored by @RequiredArgsConstructor
+    public TierCheckService(
+            UserSubscriptionRepository subscriptionRepo,
+            SubscriptionPlanRepository planRepo,
+            @Qualifier("eventServiceWebClient") WebClient eventServiceWebClient) {
+        this.subscriptionRepo      = subscriptionRepo;
+        this.planRepo              = planRepo;
+        this.eventServiceWebClient = eventServiceWebClient;
+    }
 
-    /**
-     * Fetches the user's active plan.
-     * Falls back to FREE if no subscription exists — new users haven't paid yet
-     * but must still be able to use the app.
-     */
     public SubscriptionPlan getUserPlan(UUID userId) {
         return subscriptionRepo
                 .findByUserIdAndStatus(userId, SubscriptionStatus.ACTIVE)
@@ -43,43 +43,25 @@ public class TierCheckService {
                                 "SubscriptionPlan", "FREE")));
     }
 
-    /**
-     * Called by event-service before creating a new event.
-     * Throws TierLimitExceededException so the controller returns 402.
-     */
     public void checkEventLimit(UUID userId) {
         SubscriptionPlan plan = getUserPlan(userId);
-
-        if (plan.getMaxEvents() == -1) {
-            return; // unlimited
-        }
+        if (plan.getMaxEvents() == -1) return;
 
         int currentCount = fetchCurrentEventCount(userId);
-
         if (currentCount >= plan.getMaxEvents()) {
             throw new TierLimitExceededException("create more events", plan.getPlanName());
         }
     }
 
-    /**
-     * Called by guest-service before a bulk import or manual guest add.
-     */
     public void checkGuestLimit(UUID userId, int requestedCount) {
         SubscriptionPlan plan = getUserPlan(userId);
-
-        if (plan.getMaxGuestsPerEvent() == -1) {
-            return; // unlimited
-        }
+        if (plan.getMaxGuestsPerEvent() == -1) return;
 
         if (requestedCount > plan.getMaxGuestsPerEvent()) {
             throw new TierLimitExceededException("add more guests", plan.getPlanName());
         }
     }
 
-    /**
-     * Called by GET /api/payments/tier-check/{userId}.
-     * event-service uses this to enforce limits without duplicating subscription logic.
-     */
     public TierLimitsResponse getTierLimits(UUID userId) {
         SubscriptionPlan plan         = getUserPlan(userId);
         int              currentCount = fetchCurrentEventCount(userId);
@@ -92,11 +74,6 @@ public class TierCheckService {
         );
     }
 
-    /**
-     * WHY WebClient not a direct DB query: payment-service must not own the events table.
-     * Each service owns its own data. Returns 0 on error so a network blip never
-     * blocks a user from creating events.
-     */
     private int fetchCurrentEventCount(UUID userId) {
         try {
             return eventServiceWebClient.get()

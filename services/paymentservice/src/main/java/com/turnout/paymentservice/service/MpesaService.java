@@ -10,7 +10,6 @@ import com.turnout.paymentservice.enums.PaymentProvider;
 import com.turnout.paymentservice.enums.PaymentStatus;
 import com.turnout.paymentservice.repository.PaymentTransactionRepository;
 import com.turnout.paymentservice.repository.SubscriptionPlanRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,28 +31,44 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MpesaService {
 
-    private static final String MPESA_TOKEN_KEY   = "mpesa:token";
-    private static final String TRANSACTION_TYPE  = "CustomerPayBillOnline";
+    private static final String MPESA_TOKEN_KEY  = "mpesa:token";
+    private static final String TRANSACTION_TYPE = "CustomerPayBillOnline";
     private static final DateTimeFormatter TIMESTAMP_FMT =
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-    private final MpesaProperties            mpesaProps;
-    private final StringRedisTemplate        redisTemplate;
-    private final PaymentTransactionRepository transactionRepo;
-    private final SubscriptionPlanRepository planRepo;
-    private final SubscriptionService        subscriptionService;  // handles plan upgrades
+    private final MpesaProperties               mpesaProps;
+    private final StringRedisTemplate           redisTemplate;
+    private final PaymentTransactionRepository  transactionRepo;
+    private final SubscriptionPlanRepository    planRepo;
+    private final SubscriptionService           subscriptionService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ObjectMapper               objectMapper;
+    private final ObjectMapper                  objectMapper;
+    private final WebClient                     mpesaWebClient;
 
-    @Qualifier("mpesaWebClient")
-    private final WebClient mpesaWebClient;
+    // Manual constructor — @Qualifier on a field is ignored by @RequiredArgsConstructor.
+    // It must be on the constructor parameter to work correctly.
+    public MpesaService(
+            MpesaProperties mpesaProps,
+            StringRedisTemplate redisTemplate,
+            PaymentTransactionRepository transactionRepo,
+            SubscriptionPlanRepository planRepo,
+            SubscriptionService subscriptionService,
+            KafkaTemplate<String, Object> kafkaTemplate,
+            ObjectMapper objectMapper,
+            @Qualifier("mpesaWebClient") WebClient mpesaWebClient) {
+        this.mpesaProps          = mpesaProps;
+        this.redisTemplate       = redisTemplate;
+        this.transactionRepo     = transactionRepo;
+        this.planRepo            = planRepo;
+        this.subscriptionService = subscriptionService;
+        this.kafkaTemplate       = kafkaTemplate;
+        this.objectMapper        = objectMapper;
+        this.mpesaWebClient      = mpesaWebClient;
+    }
 
-    // ------------------------------------------------------------------ //
-    //  Access Token                                                        //
-    // ------------------------------------------------------------------ //
+    // ── Access Token ──────────────────────────────────────────────────────────
 
     /**
      * Fetches a Daraja OAuth token, caching it in Redis for 3500s.
@@ -79,14 +94,11 @@ public class MpesaService {
                 .block();
 
         String token = (String) response.get("access_token");
-
         redisTemplate.opsForValue().set(MPESA_TOKEN_KEY, token, Duration.ofSeconds(3500));
         return token;
     }
 
-    // ------------------------------------------------------------------ //
-    //  STK Push                                                            //
-    // ------------------------------------------------------------------ //
+    // ── STK Push ──────────────────────────────────────────────────────────────
 
     /**
      * Sends an STK Push (payment prompt) to the user's phone.
@@ -110,7 +122,7 @@ public class MpesaService {
         body.put("Password",          password);
         body.put("Timestamp",         timestamp);
         body.put("TransactionType",   TRANSACTION_TYPE);
-        body.put("Amount",            amount.intValue());   // Safaricom expects integer KES
+        body.put("Amount",            amount.intValue());
         body.put("PartyA",            phoneNumber);
         body.put("PartyB",            mpesaProps.getShortcode());
         body.put("PhoneNumber",       phoneNumber);
@@ -129,7 +141,6 @@ public class MpesaService {
 
         String checkoutRequestId = (String) response.get("CheckoutRequestID");
 
-        // Persist as PENDING — will be updated when callback arrives
         PaymentTransaction transaction = PaymentTransaction.builder()
                 .userId(userId)
                 .planId(planId)
@@ -145,9 +156,7 @@ public class MpesaService {
         return new StkPushResponse(checkoutRequestId, "STK Push sent. Check your phone.");
     }
 
-    // ------------------------------------------------------------------ //
-    //  Callback                                                            //
-    // ------------------------------------------------------------------ //
+    // ── Callback ──────────────────────────────────────────────────────────────
 
     /**
      * Safaricom POSTs this to /api/payments/mpesa/callback after the user
@@ -156,7 +165,7 @@ public class MpesaService {
      */
     public void processMpesaCallback(Map<String, Object> callbackBody) {
         try {
-            JsonNode root       = objectMapper.valueToTree(callbackBody);
+            JsonNode root        = objectMapper.valueToTree(callbackBody);
             JsonNode stkCallback = root.path("Body").path("stkCallback");
 
             String checkoutRequestId = stkCallback.path("CheckoutRequestID").asText();
@@ -164,38 +173,32 @@ public class MpesaService {
 
             PaymentTransaction transaction = transactionRepo
                     .findByProviderReference(checkoutRequestId)
-                    .orElseThrow(() -> new ResourceNotFoundException("PaymentTransaction", checkoutRequestId));
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "PaymentTransaction", checkoutRequestId));
 
             if (resultCode == 0) {
                 transaction.setStatus(PaymentStatus.COMPLETED);
                 transactionRepo.save(transaction);
-
                 subscriptionService.upgradeSubscription(
                         transaction.getUserId(), transaction.getPlanId());
-
                 publishSubscriptionUpgraded(transaction);
                 log.info("M-Pesa payment SUCCESS for user={}", transaction.getUserId());
             } else {
                 transaction.setStatus(PaymentStatus.FAILED);
                 transaction.setMetadata(stkCallback.toString());
                 transactionRepo.save(transaction);
-
                 publishPaymentFailed(transaction);
                 log.warn("M-Pesa payment FAILED for user={} resultCode={}",
                         transaction.getUserId(), resultCode);
             }
         } catch (Exception e) {
-            // Never throw from a webhook handler — Safaricom retries on non-200 responses
             log.error("Error processing M-Pesa callback", e);
         }
     }
 
-    // ------------------------------------------------------------------ //
-    //  Private helpers                                                     //
-    // ------------------------------------------------------------------ //
+    // ── Private helpers ───────────────────────────────────────────────────────
 
     private void publishSubscriptionUpgraded(PaymentTransaction tx) {
-        // TODO: replace map with KafkaEvents.SubscriptionUpgradedEvent record once common-dto is confirmed
         Map<String, Object> event = Map.of(
                 "userId",    tx.getUserId().toString(),
                 "planId",    tx.getPlanId().toString(),
