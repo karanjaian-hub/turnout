@@ -1,21 +1,19 @@
 spring:
   application:
     name: emailservice
-
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:turnout_email}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/${DB_NAME:turnout_db}?currentSchema=email
+    username: ${DB_USERNAME:turnout_user}
+    password: ${DB_PASSWORD:turnout_pass}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
+        default_schema: email
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
@@ -23,8 +21,6 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      # We deserialize as plain String and parse JSON manually in the consumer
-      # This avoids tying us to a specific deserializer class at the Kafka level
 
 server:
   port: 8084

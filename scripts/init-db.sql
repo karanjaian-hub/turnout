@@ -111,18 +111,15 @@ CREATE INDEX IF NOT EXISTS idx_guests_rsvp_status ON guests.guests(rsvp_status);
 
 -- ── email.email_logs ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS email.email_logs (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id            UUID REFERENCES events.events(id) ON DELETE SET NULL,
-    organizer_id        UUID NOT NULL,
-    recipient_email     VARCHAR(255) NOT NULL,
-    recipient_name      VARCHAR(255),
-    subject             VARCHAR(500) NOT NULL,
-    status              email.email_status NOT NULL DEFAULT 'PENDING',
-    provider_message_id VARCHAR(255),
-    failure_reason      TEXT,
-    sent_at             TIMESTAMP,
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
+    id                BIGSERIAL PRIMARY KEY,
+    event_type        VARCHAR(255) NOT NULL,
+    recipient_email   VARCHAR(255) NOT NULL,
+    recipient_name    VARCHAR(255),
+    subject           VARCHAR(500) NOT NULL,
+    status            VARCHAR(50)  NOT NULL,
+    provider_response TEXT,
+    attempted_at      TIMESTAMP    NOT NULL,
+    delivered_at      TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_email_logs_event_id       ON email.email_logs(event_id);
