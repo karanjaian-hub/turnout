@@ -192,6 +192,6 @@ ON CONFLICT (name) DO NOTHING;
 -- ── Seed: admin users (password: Admin@1234) ────────────────────────────────
 INSERT INTO auth.users (username, email, password, full_name, role, status, email_verified)
 VALUES 
-  ('super_admin', 'superadmin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE', true),
-  ('admin', 'admin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Turnout Admin', 'ADMIN', 'ACTIVE', true)
+  ('super_admin', 'superadmin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Super Admin', 'SUPER_ADMIN'::auth.user_role, 'ACTIVE'::auth.account_status, true),
+  ('admin', 'admin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Turnout Admin', 'ADMIN'::auth.user_role, 'ACTIVE'::auth.account_status, true)
 ON CONFLICT (email) DO NOTHING;

@@ -49,15 +49,14 @@ public class AuthService {
     @Value("${turnout.reset.token-expiry-minutes}")
     private int resetTokenExpiryMinutes;
 
-    // ── Redis key prefixes ────────────────────────────────────────────────────
+    // Redis key prefixes
     private static final String KEY_OTP          = "otp:";
     private static final String KEY_OTP_ATTEMPTS = "otp:attempts:";
     private static final String KEY_REFRESH      = "refresh:";
     private static final String KEY_BLACKLIST    = "blacklist:access:";
     private static final String KEY_RESET        = "reset:";
 
-    // ── Registration ──────────────────────────────────────────────────────────
-
+    // Registration
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -89,8 +88,7 @@ public class AuthService {
         );
     }
 
-    // ── OTP verification ──────────────────────────────────────────────────────
-
+    // ── OTP verification
     @Transactional
     public MessageResponse verifyOtp(VerifyOtpRequest request) {
         String attemptsKey = KEY_OTP_ATTEMPTS + request.userId();
