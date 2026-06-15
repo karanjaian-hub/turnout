@@ -92,18 +92,16 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_event_id ON events.audit_logs(event_id
 
 -- ── guests.guests ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS guests.guests (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id        UUID NOT NULL REFERENCES events.events(id) ON DELETE CASCADE,
-    organizer_id    UUID NOT NULL,
-    email           VARCHAR(255) NOT NULL,
-    first_name      VARCHAR(100) NOT NULL,
-    last_name       VARCHAR(100) NOT NULL,
-    phone           VARCHAR(20),
-    rsvp_status     guests.rsvp_status NOT NULL DEFAULT 'PENDING',
-    check_in_at     TIMESTAMP,
-    metadata        JSONB,
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id    UUID NOT NULL REFERENCES events.events(id) ON DELETE CASCADE,
+    email       VARCHAR(255) NOT NULL,
+    full_name   VARCHAR(255) NOT NULL DEFAULT '',
+    token       VARCHAR(500) UNIQUE,
+    token_used  BOOLEAN NOT NULL DEFAULT FALSE,
+    rsvp_status guests.rsvp_status NOT NULL DEFAULT 'PENDING',
+    rsvp_date   TIMESTAMP,
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE(event_id, email)
 );
 
@@ -130,43 +128,43 @@ CREATE INDEX IF NOT EXISTS idx_email_logs_status         ON email.email_logs(sta
 
 -- ── payment.subscription_plans ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payment.subscription_plans (
-    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name                    payment.plan_type NOT NULL UNIQUE,
-    max_events              INTEGER,        -- NULL = unlimited
-    max_guests_per_event    INTEGER,        -- NULL = unlimited
-    price_kes               NUMERIC(10, 2) NOT NULL DEFAULT 0,
-    price_usd               NUMERIC(10, 2) NOT NULL DEFAULT 0,
-    created_at              TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at              TIMESTAMP NOT NULL DEFAULT NOW()
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    plan_name             VARCHAR(50) NOT NULL UNIQUE,
+    max_events            INTEGER NOT NULL DEFAULT -1,
+    max_guests_per_event  INTEGER NOT NULL DEFAULT -1,
+    monthly_price_kes     NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    monthly_price_usd     NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    active                BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at            TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- ── payment.user_subscriptions ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payment.user_subscriptions (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    plan_id         UUID NOT NULL REFERENCES payment.subscription_plans(id),
-    starts_at       TIMESTAMP NOT NULL DEFAULT NOW(),
-    expires_at      TIMESTAMP,
-    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    plan_id      UUID NOT NULL REFERENCES payment.subscription_plans(id),
+    status       VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    start_date   DATE NOT NULL DEFAULT CURRENT_DATE,
+    renewal_date DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL '30 days')::DATE,
+    created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON payment.user_subscriptions(user_id);
 
 -- ── payment.payment_transactions ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payment.payment_transactions (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id             UUID NOT NULL REFERENCES auth.users(id),
-    plan_id             UUID NOT NULL REFERENCES payment.subscription_plans(id),
-    amount              NUMERIC(10, 2) NOT NULL,
-    currency            VARCHAR(3) NOT NULL DEFAULT 'KES',
-    status              payment.payment_status NOT NULL DEFAULT 'PENDING',
-    provider            VARCHAR(50) NOT NULL,   -- 'STRIPE' or 'MPESA'
-    provider_ref        VARCHAR(255),
-    failure_reason      TEXT,
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id            UUID NOT NULL REFERENCES auth.users(id),
+    plan_id            UUID NOT NULL REFERENCES payment.subscription_plans(id),
+    provider           VARCHAR(20) NOT NULL,
+    amount             NUMERIC(12, 2) NOT NULL,
+    currency           VARCHAR(5) NOT NULL DEFAULT 'KES',
+    status             VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    provider_reference VARCHAR(200),
+    metadata           TEXT,
+    created_at         TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_payment_transactions_user_id ON payment.payment_transactions(user_id);
@@ -174,15 +172,13 @@ CREATE INDEX IF NOT EXISTS idx_payment_transactions_status  ON payment.payment_t
 
 -- ── payment.upgrade_requests ─────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS payment.upgrade_requests (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID NOT NULL REFERENCES auth.users(id),
-    from_plan       payment.plan_type NOT NULL,
-    to_plan         payment.plan_type NOT NULL,
-    status          VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-    requested_at    TIMESTAMP NOT NULL DEFAULT NOW(),
-    resolved_at     TIMESTAMP,
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id        UUID NOT NULL REFERENCES auth.users(id),
+    requested_plan VARCHAR(50),
+    admin_notes    TEXT,
+    status         VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- ── Seed: subscription plans ─────────────────────────────────────────────────
