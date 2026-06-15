@@ -82,7 +82,9 @@ CREATE TABLE IF NOT EXISTS events.audit_logs (
     event_id    UUID NOT NULL REFERENCES events.events(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL,
     action      VARCHAR(100) NOT NULL,
-    details          TEXT,
+    entity_type VARCHAR(100),
+    entity_id   UUID,
+    details     TEXT,
     created_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
