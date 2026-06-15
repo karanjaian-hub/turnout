@@ -191,26 +191,9 @@ VALUES
     ('ENTERPRISE', NULL, NULL,  9999,   79.99)
 ON CONFLICT (name) DO NOTHING;
 
--- ── Seed: SUPER_ADMIN ─────────────────────────────────────────────────────────
--- Password: Admin@1234 (BCrypt hashed)
+-- ── Seed: admin users (password: Admin@1234) ────────────────────────────────
 INSERT INTO auth.users (username, email, password, full_name, role, status, email_verified)
-VALUES (
-    'super_admin',
-    'superadmin@turnout.com',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LxuS2',
-    'Super Admin',
-    'SUPER_ADMIN', 'ACTIVE', TRUE
-)
-ON CONFLICT (email) DO NOTHING;
-
--- ── Seed: ADMIN ───────────────────────────────────────────────────────────────
--- Password: Admin@1234 (BCrypt hashed)
-INSERT INTO auth.users (username, email, password, full_name, role, status, email_verified)
-VALUES (
-    'turnout_admin',
-    'admin@turnout.com',
-    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LxuS2',
-    'Turnout Admin',
-    'ADMIN', 'ACTIVE', TRUE
-)
+VALUES 
+  ('super_admin', 'superadmin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE', true),
+  ('admin', 'admin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Turnout Admin', 'ADMIN', 'ACTIVE', true)
 ON CONFLICT (email) DO NOTHING;
