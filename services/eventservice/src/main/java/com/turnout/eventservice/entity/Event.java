@@ -48,6 +48,7 @@ public class Event extends BaseEntity {
     private UUID createdBy;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     private EventStatus status = EventStatus.DRAFT;
 }

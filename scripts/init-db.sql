@@ -31,13 +31,7 @@ DO $$ BEGIN
     CREATE TYPE email.email_status AS ENUM ('PENDING', 'QUEUED', 'SENT', 'FAILED', 'BOUNCED');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-    CREATE TYPE payment.plan_type AS ENUM ('FREE', 'PRO', 'ENTERPRISE');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-DO $$ BEGIN
-    CREATE TYPE payment.payment_status AS ENUM ('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ── auth.users ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS auth.users (
@@ -46,8 +40,8 @@ CREATE TABLE IF NOT EXISTS auth.users (
     email           VARCHAR(255) NOT NULL UNIQUE,
     password        VARCHAR(255) NOT NULL,
     full_name       VARCHAR(255) NOT NULL,
-    role            auth.user_role NOT NULL DEFAULT 'EVENT_ORGANIZER',
-    status          auth.account_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    role                 VARCHAR(50)  NOT NULL DEFAULT 'EVENT_ORGANIZER',
+    status               VARCHAR(50)  NOT NULL DEFAULT 'PENDING_VERIFICATION',
     email_verified  BOOLEAN NOT NULL DEFAULT FALSE,
     last_login_at   TIMESTAMP,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -67,7 +61,7 @@ CREATE TABLE IF NOT EXISTS events.events (
     event_date          TIMESTAMP NOT NULL,
     max_capacity        INTEGER,
     current_rsvp_count  INTEGER NOT NULL DEFAULT 0,
-    status              events.event_status NOT NULL DEFAULT 'DRAFT',
+    status              VARCHAR(50)  NOT NULL DEFAULT 'DRAFT',
     created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -98,7 +92,7 @@ CREATE TABLE IF NOT EXISTS guests.guests (
     full_name   VARCHAR(255) NOT NULL DEFAULT '',
     token       VARCHAR(500) UNIQUE,
     token_used  BOOLEAN NOT NULL DEFAULT FALSE,
-    rsvp_status guests.rsvp_status NOT NULL DEFAULT 'PENDING',
+    rsvp_status         VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     rsvp_date   TIMESTAMP,
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -122,8 +116,6 @@ CREATE TABLE IF NOT EXISTS email.email_logs (
     delivered_at      TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_email_logs_event_id       ON email.email_logs(event_id);
-CREATE INDEX IF NOT EXISTS idx_email_logs_organizer_id   ON email.email_logs(organizer_id);
 CREATE INDEX IF NOT EXISTS idx_email_logs_status         ON email.email_logs(status);
 
 -- ── payment.subscription_plans ───────────────────────────────────────────────
@@ -182,16 +174,16 @@ CREATE TABLE IF NOT EXISTS payment.upgrade_requests (
 );
 
 -- ── Seed: subscription plans ─────────────────────────────────────────────────
-INSERT INTO payment.subscription_plans (name, max_events, max_guests_per_event, price_kes, price_usd)
+INSERT INTO payment.subscription_plans (plan_name, max_events, max_guests_per_event, monthly_price_kes, monthly_price_usd)
 VALUES
     ('FREE',       5,    500,   0,      0),
-    ('PRO',        NULL, 10000, 2999,   19.99),
-    ('ENTERPRISE', NULL, NULL,  9999,   79.99)
-ON CONFLICT (name) DO NOTHING;
+    ('PRO',        -1, 10000, 2999,   19.99),
+    ('ENTERPRISE', -1, -1,  9999,   79.99)
+ON CONFLICT (plan_name) DO NOTHING;
 
 -- ── Seed: admin users (password: Admin@1234) ────────────────────────────────
 INSERT INTO auth.users (username, email, password, full_name, role, status, email_verified)
 VALUES 
-  ('super_admin', 'superadmin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Super Admin', 'SUPER_ADMIN'::auth.user_role, 'ACTIVE'::auth.account_status, true),
-  ('admin', 'admin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Turnout Admin', 'ADMIN'::auth.user_role, 'ACTIVE'::auth.account_status, true)
+  ('super_admin', 'superadmin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Super Admin', 'SUPER_ADMIN', 'ACTIVE', true),
+  ('admin', 'admin@turnout.com', '$2b$12$d/5JWusrfXZ9CRsUj24VpeYL4ongvtcAo1tLe/XvQbGd0d5ejYB.y', 'Turnout Admin', 'ADMIN', 'ACTIVE', true)
 ON CONFLICT (email) DO NOTHING;

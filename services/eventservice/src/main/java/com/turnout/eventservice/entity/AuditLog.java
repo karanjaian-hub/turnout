@@ -22,6 +22,9 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "event_id", nullable = false)
+    private UUID eventId;
+
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 

@@ -53,7 +53,7 @@ public class EventService {
         event.setStatus(EventStatus.DRAFT);
 
         Event saved = eventRepository.save(event);
-        writeAuditLog(userId, "CREATED_EVENT", "Event", saved.getId(), saved);
+        writeAuditLog(userId, "CREATED_EVENT", "Event", saved.getId(), saved.getId(), saved);
 
         return toResponse(saved);
     }
@@ -90,7 +90,7 @@ public class EventService {
         if (request.maxCapacity() != null) event.setMaxCapacity(request.maxCapacity());
 
         Event saved = eventRepository.save(event);
-        writeAuditLog(userId, "UPDATED_EVENT", "Event", saved.getId(), saved);
+        writeAuditLog(userId, "UPDATED_EVENT", "Event", saved.getId(), saved.getId(), saved);
 
         return toResponse(saved);
     }
@@ -102,7 +102,7 @@ public class EventService {
         Event event = findOrThrow(eventId);
         assertCanModify(event, userId, role);
 
-        writeAuditLog(userId, "DELETED_EVENT", "Event", event.getId(), event);
+        writeAuditLog(userId, "DELETED_EVENT", "Event", event.getId(), event.getId(), event);
         eventRepository.delete(event);
         evictStatsCache(eventId);
     }
@@ -121,7 +121,7 @@ public class EventService {
         event.setStatus(request.newStatus());
         Event saved = eventRepository.save(event);
 
-        writeAuditLog(userId, "CHANGED_STATUS", "Event", saved.getId(),
+        writeAuditLog(userId, "CHANGED_STATUS", "Event", saved.getId(), saved.getId(),
                 Map.of("from", event.getStatus(), "to", request.newStatus()));
 
         return toResponse(saved);
@@ -240,8 +240,9 @@ public class EventService {
         redisTemplate.delete(STATS_CACHE_KEY + eventId);
     }
 
-    private void writeAuditLog(UUID userId, String action, String entityType, UUID entityId, Object details) {
+    private void writeAuditLog(UUID userId, String action, String entityType, UUID entityId, UUID eventId, Object details) {
         AuditLog log = new AuditLog();
+        log.setEventId(eventId);
         log.setUserId(userId);
         log.setAction(action);
         log.setEntityType(entityType);

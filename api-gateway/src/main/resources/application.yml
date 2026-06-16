@@ -23,10 +23,22 @@ spring:
           "[/**]":
             allowedOrigins:
               - "http://localhost:3000"
+              - "http://localhost:3001"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       routes:
+        # /api/auth/me requires a valid JWT — must go through JwtAuthentication
+        - id: auth-private
+          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          predicates:
+            - Path=/api/auth/me, /api/auth/logout
+          filters:
+            - JwtAuthentication
+
+        # All other auth endpoints are public (login, register, refresh, otp etc.)
         - id: auth-public
           uri: http://${AUTH_SERVICE_HOST:authservice}:8081
           predicates:
@@ -120,7 +132,16 @@ spring:
       - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       routes:
+        - id: auth-private
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/me, /api/auth/logout
+          filters:
+            - JwtAuthentication
+
         - id: auth-public
           uri: http://localhost:8081
           predicates:

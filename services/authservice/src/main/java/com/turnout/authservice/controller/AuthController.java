@@ -10,9 +10,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -56,17 +56,12 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(
-            @RequestHeader("Authorization") String authHeader) {
-
-        // Extract token from "Bearer <token>"
-        String token = authHeader.substring(7);
-        String userId = jwtUtil.extractUserId(token).toString();
-        String jti    = jwtUtil.extractJti(token);
-
-        // Calculate remaining lifetime so we set the correct Redis TTL
-        long expiryMs = jwtUtil.extractExpiration(token).getTime() - System.currentTimeMillis();
-
-        return ResponseEntity.ok(authService.logout(userId, jti, expiryMs));
+            // Gateway forwards the user ID and JTI as headers after validating the token.
+            // The raw token is not forwarded — we never re-parse it here.
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-Token-Jti") String jti,
+            @RequestHeader("X-Token-Expiry-Ms") long tokenRemainingMs) {
+        return ResponseEntity.ok(authService.logout(userId, jti, tokenRemainingMs));
     }
 
     @PostMapping("/forgot-password")
@@ -83,10 +78,12 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            // Gateway extracts the user ID from the JWT and forwards it as a header.
+            // The auth service never validates tokens itself.
+            @RequestHeader("X-User-Id") String userId) {
 
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User", userDetails.getUsername()));
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         return ResponseEntity.ok(new UserResponse(
                 user.getId(),
