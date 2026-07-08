@@ -38,7 +38,7 @@ WORKDIR /app
 RUN addgroup -S turnout && adduser -S turnout -G turnout
 USER turnout
 
-ARG SERVICE_PATH
+ARG SERVICE_PATH=services/authservice
 COPY --from=builder /app/${SERVICE_PATH}/target/*.jar app.jar
 
 EXPOSE 8080
