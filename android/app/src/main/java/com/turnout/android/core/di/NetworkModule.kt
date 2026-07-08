@@ -80,6 +80,19 @@ object NetworkModule {
     // link from an email has no login and no token; attaching one (or trying to refresh
     // on a 401) would be meaningless and could even leak an unrelated logged-in admin's
     // token onto a request that should be anonymous.
+    // WebSocket connections stay open indefinitely — STOMP's own heartbeat mechanism
+    // handles keep-alive, not OkHttp's read timeout. Using mainClient's 30s read timeout
+    // here would silently kill the connection during any quiet period longer than that.
+    @Provides
+    @Singleton
+    @Named("webSocketClient")
+    fun provideWebSocketOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .readTimeout(0, TimeUnit.SECONDS)
+            .pingInterval(30, TimeUnit.SECONDS)
+            .build()
+
     @Provides
     @Singleton
     @Named("publicClient")

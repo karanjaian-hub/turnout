@@ -26,4 +26,16 @@ interface EventApi {
 
     @POST("api/events/{id}/send-invitations")
     suspend fun sendInvitations(@Path("id") id: Long): MessageResponse
+
+    @PATCH("api/events/{id}/status")
+    suspend fun changeStatus(@Path("id") id: Long, @Body request: ChangeStatusRequest): EventDto
+
+    @GET("api/events/{id}/stats")
+    suspend fun getEventStats(@Path("id") id: Long): EventStatsDto
+
+    @GET("api/admin/dashboard/stats")
+    suspend fun getPlatformStats(): PlatformStatsDto
+
+    @GET("api/admin/dashboard/recent-rsvps")
+    suspend fun getRecentRsvps(): List<RecentRsvpDto>
 }

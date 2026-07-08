@@ -191,8 +191,11 @@ private fun TurnoutNavHost(
             val email = backStack.arguments?.getString("email") ?: ""
             OtpVerificationScreen(
                 email = email,
+                // Routes through Onboarding, not straight to Dashboard — Onboarding
+                // itself decides whether to actually show the walkthrough or skip
+                // straight through, based on whether it's already been completed.
                 onNavigateToDashboard = {
-                    navController.navigate(Screen.Dashboard.route) {
+                    navController.navigate(Screen.Onboarding.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -217,7 +220,14 @@ private fun TurnoutNavHost(
             )
         }
 
-        composable(Screen.Dashboard.route) { DashboardScreen() }
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(
+                onNavigateToCreateEvent = { navController.navigate(Screen.CreateEvent.route) },
+                onNavigateToEventsList = { navController.navigate(Screen.Events.route) },
+                onNavigateToAi = { navController.navigate(Screen.Ai.route) },
+                onNavigateToEventDetail = { id -> navController.navigate(Screen.EventDetail.createRoute(id)) }
+            )
+        }
 
         composable(Screen.Events.route) {
             if (adaptiveConfig.showTwoPaneLayout) {

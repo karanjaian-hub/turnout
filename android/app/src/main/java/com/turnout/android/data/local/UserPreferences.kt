@@ -26,6 +26,7 @@ class UserPreferences @Inject constructor(
     val fullName: Flow<String> = dataStore.data.map { it[KEY_FULL_NAME] ?: "" }
     val theme: Flow<String>    = dataStore.data.map { it[KEY_THEME] ?: "system" }
     val biometricEnabled: Flow<Boolean> = dataStore.data.map { it[KEY_BIOMETRIC] ?: false }
+    val onboardingCompleted: Flow<Boolean> = dataStore.data.map { it[KEY_ONBOARDING_COMPLETED] ?: false }
 
     suspend fun saveUserProfile(username: String, fullName: String) {
         dataStore.edit {
@@ -41,6 +42,9 @@ class UserPreferences @Inject constructor(
     suspend fun setBiometricEnabled(enabled: Boolean) {
         dataStore.edit { it[KEY_BIOMETRIC] = enabled }
     }
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        dataStore.edit { it[KEY_ONBOARDING_COMPLETED] = completed }
+    }
 
     suspend fun clear() {
         dataStore.edit { it.clear() }
@@ -51,5 +55,6 @@ class UserPreferences @Inject constructor(
         private val KEY_FULL_NAME = stringPreferencesKey("full_name")
         private val KEY_THEME     = stringPreferencesKey("theme")
         private val KEY_BIOMETRIC = booleanPreferencesKey("biometric_enabled")
+        private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
 }
