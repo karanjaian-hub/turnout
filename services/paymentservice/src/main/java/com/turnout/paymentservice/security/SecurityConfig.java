@@ -15,21 +15,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(AbstractHttpConfigurer::disable)
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Webhook endpoints — called by Safaricom and Stripe servers directly,
-                // no JWT involved. Signature verification is done inside the service layer.
-                .requestMatchers(
-                    "/api/payments/mpesa/callback",
-                    "/api/payments/stripe/webhook"
-                ).permitAll()
-                // Actuator health — needed by Docker and the gateway
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                // Everything else requires the gateway to have forwarded X-User-Id
-                .anyRequest().authenticated()
-            );
-
+            // JWT authentication is handled exclusively by the API Gateway.
+            // The gateway forwards X-User-Id and X-User-Role headers after validating
+            // the token — this service trusts those headers and permits all requests.
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 }

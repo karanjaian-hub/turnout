@@ -49,14 +49,14 @@ public class AuthService {
     @Value("${turnout.reset.token-expiry-minutes}")
     private int resetTokenExpiryMinutes;
 
-    // Redis key prefixes
+// Redis key prefixes
     private static final String KEY_OTP          = "otp:";
     private static final String KEY_OTP_ATTEMPTS = "otp:attempts:";
     private static final String KEY_REFRESH      = "refresh:";
     private static final String KEY_BLACKLIST    = "blacklist:access:";
     private static final String KEY_RESET        = "reset:";
 
-    // Registration
+// Registration
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -88,7 +88,7 @@ public class AuthService {
         );
     }
 
-    // ── OTP verification
+// OTP verification
     @Transactional
     public MessageResponse verifyOtp(VerifyOtpRequest request) {
         String attemptsKey = KEY_OTP_ATTEMPTS + request.userId();
@@ -117,7 +117,7 @@ public class AuthService {
         user.setStatus(AccountStatus.ACTIVE);
         userRepository.save(user);
 
-        // Clean up — OTP keys no longer needed
+// Clean up — OTP keys no longer needed
         redisTemplate.delete(KEY_OTP + request.userId());
         redisTemplate.delete(attemptsKey);
 
@@ -126,13 +126,12 @@ public class AuthService {
         return new MessageResponse("Email verified successfully. You can now log in.", true);
     }
 
-    // ── Resend OTP ────────────────────────────────────────────────────────────
-
+// Resend OTP
     public MessageResponse resendOtp(ResendOtpRequest request) {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", request.userId()));
 
-        // Reset attempts and issue a fresh code
+    // Reset attempts and issue a fresh code
         redisTemplate.delete(KEY_OTP + request.userId());
         redisTemplate.delete(KEY_OTP_ATTEMPTS + request.userId());
 
@@ -142,8 +141,7 @@ public class AuthService {
         return new MessageResponse("A new verification code has been sent to your email.", true);
     }
 
-    // ── Login ─────────────────────────────────────────────────────────────────
-
+// Login
     @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.username())
@@ -164,7 +162,7 @@ public class AuthService {
         String accessToken  = jwtUtil.generateAccessToken(user.getId(), user.getRole(), accessTokenExpiryMs);
         String refreshToken = jwtUtil.generateRefreshToken(user.getId(), refreshTokenExpiryMs);
 
-        // Store refresh token in Redis — used to validate rotation on next refresh call
+// Store refresh token in Redis — used to validate rotation on next refresh call
         redisTemplate.opsForValue().set(
                 KEY_REFRESH + user.getId(),
                 refreshToken,
@@ -185,8 +183,7 @@ public class AuthService {
         );
     }
 
-    // ── Refresh token ─────────────────────────────────────────────────────────
-
+// Refresh token
     public AuthResponse refresh(RefreshTokenRequest request) {
         if (!jwtUtil.validateToken(request.refreshToken())) {
             throw new InvalidTokenException("Refresh token is invalid or expired.");
@@ -205,7 +202,7 @@ public class AuthService {
         String newAccessToken  = jwtUtil.generateAccessToken(user.getId(), user.getRole(), accessTokenExpiryMs);
         String newRefreshToken = jwtUtil.generateRefreshToken(user.getId(), refreshTokenExpiryMs);
 
-        // Rotate — old refresh token is now invalid
+// Rotate — old refresh token is now invalid
         redisTemplate.opsForValue().set(
                 KEY_REFRESH + userId,
                 newRefreshToken,
@@ -223,27 +220,18 @@ public class AuthService {
         );
     }
 
-    // ── Logout ────────────────────────────────────────────────────────────────
-
-    public MessageResponse logout(String userId, String jti, long tokenRemainingMs) {
-        // Blacklist the access token JTI so the gateway rejects it immediately.
-        // TTL matches the token's remaining lifetime — no need to keep it longer.
-        redisTemplate.opsForValue().set(
-                KEY_BLACKLIST + jti,
-                "1",
-                tokenRemainingMs,
-                TimeUnit.MILLISECONDS
-        );
-
+// Logout
+    public MessageResponse logout(String userId) {
+        // Delete refresh token — prevents token rotation attacks.
+        // Access token expires naturally (15 min). Full JTI blacklisting
+        // will be wired in the gateway phase.
         redisTemplate.delete(KEY_REFRESH + userId);
-
         return new MessageResponse("Logged out successfully.", true);
     }
 
-    // ── Forgot password ───────────────────────────────────────────────────────
-
+    // Forgot password
     public MessageResponse forgotPassword(ForgotPasswordRequest request) {
-        // Always return success — never reveal whether an email exists
+// Always return success — never reveal whether an email exists
         userRepository.findByEmail(request.email()).ifPresent(user -> {
             String resetToken = jwtUtil.generateAccessToken(
                     user.getId(), user.getRole(),
@@ -263,8 +251,7 @@ public class AuthService {
         return new MessageResponse("If that email exists, a reset link has been sent.", true);
     }
 
-    // ── Reset password ────────────────────────────────────────────────────────
-
+// Reset password
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
         if (!jwtUtil.validateToken(request.token())) {
@@ -282,17 +269,16 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
-        // Invalidate reset token and all active sessions
+// Invalidate reset token and all active sessions
         redisTemplate.delete(KEY_RESET + request.token());
         redisTemplate.delete(KEY_REFRESH + user.getId());
 
         return new MessageResponse("Password reset successfully. Please log in again.", true);
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
+// Private helpers
     private String generateAndStoreOtp(UUID userId) {
-        // 6-digit zero-padded numeric OTP
+// 6-digit zero-padded numeric OTP
         String otp = String.format("%06d", (int) (Math.random() * 1_000_000));
 
         redisTemplate.opsForValue().set(

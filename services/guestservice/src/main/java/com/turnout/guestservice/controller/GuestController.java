@@ -7,6 +7,8 @@ import com.turnout.guestservice.service.BulkImportService;
 import com.turnout.guestservice.service.GuestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.Valid;
+import com.turnout.guestservice.dto.UpdateGuestRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -58,7 +60,7 @@ public class GuestController {
      * GET /api/guests/sample-csv
      * Returns a downloadable CSV template so organizers know the expected columns.
      */
-    @GetMapping("/sample-csv")
+    @GetMapping("/sample-template")
     public ResponseEntity<byte[]> downloadSampleCsv() {
         byte[] csv = bulkImportService.generateSampleCsv();
         return ResponseEntity.ok()
@@ -102,6 +104,19 @@ public class GuestController {
     @GetMapping("/event/{eventId}/stats")
     public ResponseEntity<EventGuestStatsResponse> getStats(@PathVariable UUID eventId) {
         return ResponseEntity.ok(guestService.getEventStats(eventId));
+    }
+
+    @GetMapping("/{guestId}")
+    public ResponseEntity<GuestResponse> getGuest(@PathVariable UUID guestId) {
+        return ResponseEntity.ok(guestService.getGuest(guestId));
+    }
+
+    @PutMapping("/{guestId}")
+    public ResponseEntity<GuestResponse> updateGuest(
+            @PathVariable UUID guestId,
+            @RequestBody @Valid UpdateGuestRequest request
+    ) {
+        return ResponseEntity.ok(guestService.updateGuest(guestId, request));
     }
 
     // ── Mutations ─────────────────────────────────────────────────────────────

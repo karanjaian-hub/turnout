@@ -1,127 +1,172 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  AreaChart, Area, PieChart, Pie, Cell,
+  AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
 import { Calendar, Users, TrendingUp, Activity } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import AppLayout from '../components/layout/AppLayout';
-import StatCard from '../components/ui/StatCard';
-import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import Spinner from '../components/ui/Spinner';
 import useWebSocket from '../hooks/useWebSocket';
 import api from '../services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface DashboardStats   { totalEvents: number; activeEventsCount: number; totalOrganizers: number; totalGuestsInvited: number; totalConfirmedRsvps: number; totalRevenueKes: number; }
+interface RsvpDataPoint    { date: string; rsvps: number; }
+interface RecentRsvp       { id: string; guestName: string; eventTitle: string; status: 'CONFIRMED'|'DECLINED'|'MAYBE'|'WAITLISTED'; timestamp: string; }
+interface TopEvent         { id: string; title: string; confirmed: number; capacity: number; }
 
-interface DashboardStats {
-  totalEvents: number;
-  totalOrganizers: number;
-  rsvpsToday: number;
-  activeEvents: number;
-}
+// ─── Design tokens ────────────────────────────────────────────────────────────
 
-interface RsvpDataPoint {
-  date: string;
-  rsvps: number;
-}
-
-interface TierDataPoint {
-  name: string;
-  value: number;
-}
-
-interface RecentRsvp {
-  id: string;
-  guestName: string;
-  eventTitle: string;
-  status: 'CONFIRMED' | 'DECLINED' | 'MAYBE' | 'WAITLISTED';
-  timestamp: string;
-}
-
-interface TopEvent {
-  id: string;
-  title: string;
-  confirmed: number;
-  capacity: number;
-}
-
-// ─── Chart colours — Turnout design tokens ───────────────────────────────────
-const TIER_COLOURS = ['#1E3A5F', '#2563EB', '#16A34A'];
-
-const STATUS_BADGE: Record<string, 'success' | 'danger' | 'warning' | 'neutral'> = {
-  CONFIRMED:  'success',
-  DECLINED:   'danger',
-  MAYBE:      'warning',
-  WAITLISTED: 'neutral',
+const STATUS_BADGE: Record<string, 'success'|'danger'|'warning'|'neutral'> = {
+  CONFIRMED: 'success', DECLINED: 'danger', MAYBE: 'warning', WAITLISTED: 'neutral',
 };
 
-// ─── Fallback data — shown while the backend is loading or unreachable ────────
-// This keeps the UI looking alive during development without a running backend.
-const FALLBACK_STATS: DashboardStats = {
-  totalEvents: 0, totalOrganizers: 0, rsvpsToday: 0, activeEvents: 0,
-};
+// Avatar color derived from name hash — same person always same color
+const AVATAR_PALETTE = ['#1D4ED8','#0F766E','#7C3AED','#B45309','#BE123C'];
+const avatarColor = (name: string) =>
+  AVATAR_PALETTE[name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_PALETTE.length];
 
-const FALLBACK_RSVP_DATA: RsvpDataPoint[] = Array.from({ length: 30 }, (_, i) => ({
-  date: new Date(Date.now() - (29 - i) * 86400000)
-    .toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+// ─── Fallback data ────────────────────────────────────────────────────────────
+const FALLBACK_STATS: DashboardStats = { totalEvents: 0, activeEventsCount: 0, totalOrganizers: 0, totalGuestsInvited: 0, totalConfirmedRsvps: 0, totalRevenueKes: 0 };
+const FALLBACK_RSVP: RsvpDataPoint[] = Array.from({ length: 30 }, (_, i) => ({
+  date: new Date(Date.now() - (29 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
   rsvps: Math.floor(Math.random() * 120) + 20,
 }));
 
-const FALLBACK_TIER_DATA: TierDataPoint[] = [
-  { name: 'FREE', value: 60 },
-  { name: 'PRO', value: 30 },
-  { name: 'ENTERPRISE', value: 10 },
-];
+// ─── Animated number component ───────────────────────────────────────────────
+const AnimatedNumber: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
+  const [display, setDisplay] = useState(0);
+  const prev    = useRef(0);
+  const frameRef = useRef<number | undefined>(undefined);
 
-// ─── Component ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const from     = prev.current;
+    const to       = value;
+    const duration = 600;
+    const start    = performance.now();
+
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      setDisplay(Math.round(from + (to - from) * e));
+      if (p < 1) frameRef.current = requestAnimationFrame(tick);
+      else prev.current = to;
+    };
+
+    frameRef.current = requestAnimationFrame(tick);
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
+  }, [value]);
+
+  return <span className={className}>{display.toLocaleString()}</span>;
+};
+
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+const Skeleton: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = '' }) => (
+  <div className={`rounded-xl bg-slate-200 overflow-hidden relative ${className}`}>
+    <div style={{
+      position: 'absolute', inset: 0,
+      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
+      animation: 'shimmer 1.4s infinite',
+    }} />
+  </div>
+);
+
+// ─── Custom chart tooltip ─────────────────────────────────────────────────────
+const DarkTooltip: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'rgba(11,20,34,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 14px', fontSize: 12, color: '#E2E8F0', fontFamily: 'Inter', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+      <p style={{ color: 'var(--text-muted)', marginBottom: 4 }}>{label}</p>
+      <p style={{ color: '#2563EB', fontWeight: 600 }}>{payload[0]?.value?.toLocaleString()} RSVPs</p>
+    </div>
+  );
+};
+
+
+// ─── Stat card ────────────────────────────────────────────────────────────────
+const ACCENT_MAP = {
+  blue:  { border: '#2563EB', iconBg: 'rgba(37,99,235,0.1)',  iconColor: '#2563EB' },
+  navy:  { border: '#1E3A5F', iconBg: 'rgba(30,58,95,0.1)',   iconColor: '#1E3A5F' },
+  green: { border: '#16A34A', iconBg: 'rgba(22,163,74,0.1)',  iconColor: '#16A34A' },
+  amber: { border: '#D97706', iconBg: 'rgba(217,119,6,0.1)',  iconColor: '#D97706' },
+};
+
+const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; accent: keyof typeof ACCENT_MAP }> = ({ label, value, icon, accent }) => {
+  const { border, iconBg, iconColor } = ACCENT_MAP[accent];
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: 'var(--bg-card)',
+        borderRadius: 12,
+        padding: '24px',
+        borderLeft: `4px solid ${border}`,
+        boxShadow: hovered ? '0 8px 24px rgba(0,0,0,0.12)' : 'var(--shadow-card)',
+        transform: hovered ? 'translateY(-2px)' : 'none',
+        transition: 'all 200ms ease',
+        cursor: 'default',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'Inter', fontWeight: 500, marginBottom: 4 }}>{label}</p>
+          <p style={{ fontSize: 32, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <AnimatedNumber value={value} />
+          </p>
+        </div>
+        <div style={{ padding: 10, borderRadius: 10, background: iconBg, color: iconColor }}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 const DashboardPage: React.FC = () => {
   const { connected, alerts } = useWebSocket();
 
-  const [stats, setStats]           = useState<DashboardStats>(FALLBACK_STATS);
-  const [rsvpData, setRsvpData]     = useState<RsvpDataPoint[]>(FALLBACK_RSVP_DATA);
-  const [tierData, setTierData]     = useState<TierDataPoint[]>(FALLBACK_TIER_DATA);
-  const [topEvents, setTopEvents]   = useState<TopEvent[]>([]);
+  const [stats,      setStats]      = useState<DashboardStats>(FALLBACK_STATS);
+  const [rsvpData] = useState<RsvpDataPoint[]>(FALLBACK_RSVP);
+  const [topEvents] = useState<TopEvent[]>([]);
   const [recentRsvps, setRecentRsvps] = useState<RecentRsvp[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const [loading,    setLoading]    = useState(true);
+
+  // Pulse-line flash on new WebSocket message
+  const [wsPulse, setWsPulse] = useState(false);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchAll = async () => {
       try {
-        // Fire all requests in parallel — no reason to wait for each sequentially
-        const [statsRes, rsvpRes, tierRes, topRes, recentRes] = await Promise.allSettled([
-          api.get<DashboardStats>('/api/admin/stats'),
-          api.get<RsvpDataPoint[]>('/api/admin/rsvp-trend'),
-          api.get<TierDataPoint[]>('/api/admin/tier-distribution'),
-          api.get<TopEvent[]>('/api/admin/top-events'),
-          api.get<RecentRsvp[]>('/api/admin/recent-rsvps'),
+        const [sR, recR] = await Promise.allSettled([
+          api.get<DashboardStats>('/api/admin/dashboard/stats'),
+          api.get<RecentRsvp[]>('/api/admin/dashboard/recent-rsvps'),
         ]);
-
-        // allSettled means one failing endpoint won't break the whole dashboard
-        if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
-        if (rsvpRes.status  === 'fulfilled') setRsvpData(rsvpRes.value.data);
-        if (tierRes.status  === 'fulfilled') setTierData(tierRes.value.data);
-        if (topRes.status   === 'fulfilled') setTopEvents(topRes.value.data);
-        if (recentRes.status === 'fulfilled') setRecentRsvps(recentRes.value.data);
-
-      } catch {
-        // Silently fall back to placeholder data — dashboard still renders
-      } finally {
-        setLoading(false);
-      }
+        if (sR.status   === 'fulfilled') setStats(sR.value.data);
+        if (recR.status === 'fulfilled') setRecentRsvps(recR.value.data);
+      } catch {}
+      finally { setLoading(false); }
     };
-
-    fetchDashboardData();
+    fetchAll();
   }, []);
 
-  // Prepend live WebSocket RSVPs to the recent activity feed
+  // Prepend live WebSocket RSVPs + trigger pulse flash
   useEffect(() => {
-    if (alerts.length === 0) return;
+    if (!alerts.length) return;
     const latest = alerts[0];
-    if (latest.type !== 'RSVP') return;
 
+    // Flash the pulse line
+    setWsPulse(true);
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    pulseTimer.current = setTimeout(() => setWsPulse(false), 600);
+
+    if (latest.type !== 'RSVP') return;
     const liveRsvp: RecentRsvp = {
       id:         `live-${latest.timestamp}`,
       guestName:  latest.metadata?.guestName  ?? 'Guest',
@@ -129,247 +174,205 @@ const DashboardPage: React.FC = () => {
       status:     (latest.metadata?.status as RecentRsvp['status']) ?? 'CONFIRMED',
       timestamp:  latest.timestamp,
     };
-
     setRecentRsvps(prev => [liveRsvp, ...prev].slice(0, 20));
   }, [alerts]);
 
   return (
     <AppLayout>
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        <div className="space-y-6">
+      <style>{`
+        @keyframes shimmer {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes rowFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes wsPulse {
+          0%,100% { opacity: 1; }
+          50%     { opacity: 0.3; }
+        }
+      `}</style>
 
-          {/* ── Stat cards ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard
-              label="Total Events"
-              value={stats.totalEvents}
-              icon={<Calendar size={20} />}
-              accent="blue"
-            />
-            <StatCard
-              label="Total Organizers"
-              value={stats.totalOrganizers}
-              icon={<Users size={20} />}
-              accent="navy"
-            />
-            <StatCard
-              label="RSVPs Today"
-              value={stats.rsvpsToday}
-              icon={<TrendingUp size={20} />}
-              accent="green"
-            />
-            <StatCard
-              label="Active Events"
-              value={stats.activeEvents}
-              icon={<Activity size={20} />}
-              accent="amber"
-            />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        {/* ── Page header with pulse-line ── */}
+        <div>
+          <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Dashboard
+          </h1>
+          {/* Pulse-line tied to WebSocket state */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1, maxWidth: 300 }}>
+              <svg width="100%" height="8" viewBox="0 0 300 8" preserveAspectRatio="none">
+                <line x1="0" y1="4" x2="300" y2="4" stroke={connected ? '#2563EB' : '#CBD5E1'} strokeWidth="1" strokeOpacity="0.2"/>
+                <line x1="0" y1="4" x2="300" y2="4"
+                  stroke={connected ? '#2563EB' : '#CBD5E1'}
+                  strokeWidth="2"
+                  strokeDasharray="300"
+                  strokeDashoffset="300"
+                  style={{ animation: connected ? `wsPulse ${wsPulse ? '0.3s' : '2s'} ease-in-out infinite` : 'none', opacity: connected ? 1 : 0.3 }}
+                />
+              </svg>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: connected ? '#16A34A' : '#CBD5E1', animation: connected ? 'wsPulse 2s ease-in-out infinite' : 'none' }} />
+              <span style={{ fontSize: 12, fontFamily: 'Inter', fontWeight: 500, color: connected ? '#16A34A' : 'var(--text-muted)' }}>
+                {connected ? 'LIVE' : 'Reconnecting...'}
+              </span>
+            </div>
           </div>
+        </div>
 
-          {/* ── Charts row ── */}
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        {/* ── Stat cards ── */}
+        {loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            {[1,2,3,4].map(i => <Skeleton key={i} style={{ height: 100 }} />)}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            <StatCard label="Total Events"     value={stats.totalEvents}      icon={<Calendar size={20}/>}   accent="blue"  />
+            <StatCard label="Total Organizers" value={stats.totalOrganizers}  icon={<Users size={20}/>}      accent="navy"  />
+            <StatCard label="RSVPs Today"      value={stats.totalConfirmedRsvps}       icon={<TrendingUp size={20}/>} accent="green" />
+            <StatCard label="Active Events"    value={stats.activeEventsCount}     icon={<Activity size={20}/>}   accent="amber" />
+          </div>
+        )}
 
-            {/* Area chart — RSVPs over 30 days */}
-            <Card className="xl:col-span-3 p-6">
-              <h3 className="text-sm font-semibold text-navy mb-4">
-                RSVPs — Last 30 Days
-              </h3>
+        {/* ── Charts row ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20 }}>
+
+          {/* Area chart */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: 24, boxShadow: 'var(--shadow-card)' }}>
+            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>
+              RSVPs — Last 30 Days
+            </h3>
+            {loading ? <Skeleton style={{ height: 220 }} /> : (
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={rsvpData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                   <defs>
-                    {/* Gradient fill under the line — looks far better than a flat fill */}
-                    <linearGradient id="rsvpGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                    <linearGradient id="rsvpGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#2563EB" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: '#94A3B8' }}
-                    tickLine={false}
-                    axisLine={false}
-                    interval={4}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: '#94A3B8' }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: '#fff',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="rsvps"
-                    stroke="#2563EB"
-                    strokeWidth={2}
-                    fill="url(#rsvpGradient)"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval={4}/>
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false}/>
+                  <Tooltip content={<DarkTooltip/>}/>
+                  <Area type="monotone" dataKey="rsvps" stroke="#2563EB" strokeWidth={2} fill="url(#rsvpGrad)"/>
                 </AreaChart>
               </ResponsiveContainer>
-            </Card>
-
-            {/* Pie chart — tier distribution */}
-            <Card className="xl:col-span-2 p-6">
-              <h3 className="text-sm font-semibold text-navy mb-4">
-                Organizer Tiers
-              </h3>
-              <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie
-                    data={tierData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={70}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {tierData.map((_, i) => (
-                      <Cell key={i} fill={TIER_COLOURS[i % TIER_COLOURS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: '#fff',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Custom legend below the chart */}
-              <div className="flex justify-center gap-4 mt-2">
-                {tierData.map((tier, i) => (
-                  <div key={tier.name} className="flex items-center gap-1.5">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ background: TIER_COLOURS[i % TIER_COLOURS.length] }}
-                    />
-                    <span className="text-xs text-slate-500">{tier.name}</span>
-                    <span className="text-xs font-semibold text-navy">{tier.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            )}
           </div>
 
-          {/* ── Bottom row ── */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-
-            {/* Live activity feed */}
-            <Card className="xl:col-span-2 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-navy">Recent Activity</h3>
-                {/* Pulsing dot — shows WebSocket connection status */}
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${
-                    connected ? 'bg-success animate-pulse' : 'bg-slate-300'
-                  }`} />
-                  <span className={`text-xs font-medium ${
-                    connected ? 'text-success' : 'text-slate-400'
-                  }`}>
-                    {connected ? 'LIVE' : 'OFFLINE'}
-                  </span>
+          {/* Platform summary */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: 24, boxShadow: 'var(--shadow-card)', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+              Platform Summary
+            </h3>
+            {loading ? <Skeleton style={{ height: 160 }} /> : (
+              <>
+                <div style={{ borderLeft: '3px solid #16A34A', paddingLeft: 16 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter', marginBottom: 4 }}>Total Guests Invited</p>
+                  <p style={{ fontSize: 28, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <AnimatedNumber value={stats.totalGuestsInvited} />
+                  </p>
                 </div>
-              </div>
-
-              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                {recentRsvps.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-8">
-                    No recent activity yet.
+                <div style={{ borderLeft: '3px solid #D97706', paddingLeft: 16 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter', marginBottom: 4 }}>Total Revenue (KES)</p>
+                  <p style={{ fontSize: 28, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <AnimatedNumber value={stats.totalRevenueKes} />
                   </p>
-                ) : (
-                  recentRsvps.map(rsvp => (
-                    <div
-                      key={rsvp.id}
-                      className="flex items-center gap-3 p-2.5 rounded-input hover:bg-slate-50 transition-colors"
-                    >
-                      {/* Avatar — initials */}
-                      <div className="w-8 h-8 rounded-full bg-primary-500/10 text-primary-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {rsvp.guestName[0]?.toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-navy truncate">
-                          {rsvp.guestName}
-                        </p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {rsvp.eventTitle}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <Badge variant={STATUS_BADGE[rsvp.status] ?? 'neutral'}>
-                          {rsvp.status}
-                        </Badge>
-                        <span className="text-xs text-slate-400">
-                          {formatDistanceToNow(new Date(rsvp.timestamp), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </Card>
-
-            {/* Top events */}
-            <Card className="xl:col-span-1 p-6">
-              <h3 className="text-sm font-semibold text-navy mb-4">Top Events</h3>
-
-              <div className="space-y-4">
-                {topEvents.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-8">
-                    No events yet.
-                  </p>
-                ) : (
-                  topEvents.slice(0, 5).map((event, i) => {
-                    const pct = event.capacity > 0
-                      ? Math.round((event.confirmed / event.capacity) * 100)
-                      : 0;
-
-                    return (
-                      <div key={event.id}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {/* Rank number */}
-                            <span className="text-xs font-bold text-slate-400 w-4 flex-shrink-0">
-                              {i + 1}
-                            </span>
-                            <span className="text-sm font-medium text-navy truncate">
-                              {event.title}
-                            </span>
-                          </div>
-                          <span className="text-xs text-slate-400 flex-shrink-0 ml-2">
-                            {event.confirmed}/{event.capacity}
-                          </span>
-                        </div>
-                        {/* Capacity progress bar */}
-                        <div className="w-full bg-slate-100 rounded-full h-1.5 ml-6">
-                          <div
-                            className="h-1.5 rounded-full bg-gradient-to-r from-navy to-primary-500 transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </Card>
-
+                </div>
+              </>
+            )}
           </div>
         </div>
-      )}
+
+        {/* ── Bottom row ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+
+          {/* Recent activity */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: 24, boxShadow: 'var(--shadow-card)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Recent Activity</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: connected ? '#16A34A' : '#CBD5E1', animation: connected ? 'wsPulse 2s ease-in-out infinite' : 'none' }}/>
+                <span style={{ fontSize: 11, fontFamily: 'Inter', fontWeight: 500, color: connected ? '#16A34A' : 'var(--text-muted)' }}>
+                  {connected ? 'LIVE' : 'OFFLINE'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {loading ? (
+                [1,2,3,4].map(i => <Skeleton key={i} style={{ height: 52 }}/>)
+              ) : recentRsvps.length === 0 ? (
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0', fontFamily: 'Inter' }}>No recent activity yet.</p>
+              ) : (
+                recentRsvps.map((rsvp, idx) => (
+                  <div key={rsvp.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 8px', borderRadius: 8,
+                    animation: idx === 0 ? 'slideIn 300ms ease' : `rowFadeIn 300ms ease ${Math.min(idx, 9) * 30}ms both`,
+                    transition: 'background 150ms',
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-app)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor(rsvp.guestName), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-card)', fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: 'Inter' }}>
+                      {rsvp.guestName[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'Inter', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rsvp.guestName}</p>
+                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rsvp.eventTitle}</p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                      <Badge variant={STATUS_BADGE[rsvp.status] ?? 'neutral'}>{rsvp.status}</Badge>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono',monospace" }}>
+                        {formatDistanceToNow(new Date(rsvp.timestamp), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Top events */}
+          <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: 24, boxShadow: 'var(--shadow-card)' }}>
+            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16 }}>Top Events</h3>
+            {loading ? (
+              [1,2,3].map(i => <Skeleton key={i} style={{ height: 40, marginBottom: 12 }}/>)
+            ) : topEvents.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0', fontFamily: 'Inter' }}>No events yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {topEvents.slice(0, 5).map((ev, i) => {
+                  const pct = ev.capacity > 0 ? Math.round((ev.confirmed / ev.capacity) * 100) : 0;
+                  return (
+                    <div key={ev.id}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', width: 16, flexShrink: 0, fontFamily: "'Space Grotesk',sans-serif" }}>{i+1}</span>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'Inter', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</span>
+                        </div>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: "'JetBrains Mono',monospace", flexShrink: 0, marginLeft: 8 }}>{ev.confirmed}/{ev.capacity}</span>
+                      </div>
+                      <div style={{ height: 4, background: 'var(--border)', borderRadius: 99, marginLeft: 24 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: 'linear-gradient(90deg, #1E3A5F, #2563EB)', transition: 'width 500ms ease' }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </AppLayout>
   );
 };

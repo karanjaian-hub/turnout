@@ -18,6 +18,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.crypto.SecretKey;
@@ -42,24 +43,20 @@ public class BulkImportService {
     private final EventServiceClient eventServiceClient;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    // Simple but effective — covers the vast majority of real email addresses
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     // ── Public API ────────────────────────────────────────────────────────────
 
+    @Transactional
     public BulkImportResponse importGuests(UUID eventId, MultipartFile csvFile, UUID organizerId) {
         List<FailedGuestRecord> failedRows = new ArrayList<>();
         List<Guest> currentBatch = new ArrayList<>();
-
-        // HashSet for O(1) duplicate detection within the current file
-        // without hitting the DB on every row
         Set<String> emailsSeen = new HashSet<>();
 
         int rowNumber = 0;
         int successCount = 0;
 
-        // Fetch event date once upfront — used for all token expiry calculations
         LocalDateTime eventDate = eventServiceClient.getEventDate(eventId);
 
         try (
@@ -79,7 +76,6 @@ public class BulkImportService {
                 String fullName = record.isMapped("full_name") ? record.get("full_name") : "";
                 String email    = record.isMapped("email")     ? record.get("email")     : "";
 
-                // Validate and collect failures — never throw, never stop the loop
                 String validationError = validate(fullName, email);
                 if (validationError != null) {
                     failedRows.add(new FailedGuestRecord(rowNumber, email, fullName, validationError));
@@ -88,13 +84,11 @@ public class BulkImportService {
 
                 String normalizedEmail = email.toLowerCase();
 
-                // Within-file duplicate check — no DB round trip needed
                 if (emailsSeen.contains(normalizedEmail)) {
                     failedRows.add(new FailedGuestRecord(rowNumber, email, fullName, "Duplicate in file"));
                     continue;
                 }
 
-                // DB-level duplicate check — guest already imported for this event
                 if (guestRepository.existsByEventIdAndEmail(eventId, normalizedEmail)) {
                     failedRows.add(new FailedGuestRecord(rowNumber, email, fullName, "Already imported"));
                     continue;
@@ -102,21 +96,20 @@ public class BulkImportService {
 
                 emailsSeen.add(normalizedEmail);
 
-                String token = generateGuestToken(UUID.randomUUID(), eventId, normalizedEmail, eventDate);
-                currentBatch.add(new Guest(eventId, fullName.trim(), normalizedEmail, token));
+                // Token is built with a placeholder — guest doesn't have a DB id yet.
+                // We patch it in right after the batch flush, once Hibernate assigns real ids.
+                Guest guest = new Guest(eventId, fullName.trim(), normalizedEmail, "PENDING-" + UUID.randomUUID());
+                currentBatch.add(guest);
                 successCount++;
 
-                // Flush to DB every batchSize rows — keeps heap usage flat regardless of file size
                 if (currentBatch.size() >= tokenProperties.getBatchSize()) {
-                    guestRepository.saveAll(currentBatch);
-                    currentBatch.clear();
+                    flushBatchWithTokens(currentBatch, eventId, eventDate);
                     log.debug("Flushed batch at row {}", rowNumber);
                 }
             }
 
-            // Save whatever is left after the loop finishes
             if (!currentBatch.isEmpty()) {
-                guestRepository.saveAll(currentBatch);
+                flushBatchWithTokens(currentBatch, eventId, eventDate);
             }
 
         } catch (Exception e) {
@@ -175,14 +168,29 @@ public class BulkImportService {
         if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
             return "Invalid email format";
         }
-        return null; // null means valid
+        return null;
     }
 
-    // Guest tokens are NOT user access tokens — they carry guestId/eventId/email
-    // and are only used by the RSVP service to identify which guest is responding
-    private String generateGuestToken(UUID guestId, UUID eventId, String email, LocalDateTime eventDate) {
-        // Token expires tokenExpiryDays after the event date
-        // so organizers can import guests well before the event
+    // Saves the batch first so Hibernate assigns real DB ids, then builds each
+    // guest's real JWT token (which embeds that id) and updates the row.
+    // Two round trips per batch instead of one, but this sidesteps every
+    // Hibernate persist/merge ambiguity around manually-assigned UUIDs.
+    private void flushBatchWithTokens(List<Guest> batch, UUID eventId, LocalDateTime eventDate) {
+        guestRepository.saveAll(batch);
+        guestRepository.flush();
+
+        for (Guest guest : batch) {
+            String token = generateGuestToken(
+                    guest.getId(), eventId, guest.getEmail(), guest.getFullName(), eventDate
+            );
+            guest.setToken(token);
+        }
+
+        guestRepository.saveAll(batch);
+        batch.clear();
+    }
+
+    private String generateGuestToken(UUID guestId, UUID eventId, String email, String fullName, LocalDateTime eventDate) {
         Date expiry = Date.from(
                 eventDate.plusDays(tokenProperties.getTokenExpiryDays())
                          .atZone(ZoneId.systemDefault())
@@ -193,7 +201,9 @@ public class BulkImportService {
                 .subject(guestId.toString())
                 .claim("eventId", eventId.toString())
                 .claim("email", email)
-                .claim("type", "GUEST_RSVP")   // distinguishes guest tokens from user access tokens
+                .claim("guestId", guestId.toString())
+                .claim("guestName", fullName)
+                .claim("type", "GUEST_RSVP")
                 .expiration(expiry)
                 .signWith(getSigningKey())
                 .compact();
@@ -209,7 +219,7 @@ public class BulkImportService {
         GuestImportedEvent event = new GuestImportedEvent(
                 eventId,
                 organizerId,
-                successCount + failureCount,  // totalGuests = all rows attempted
+                successCount + failureCount,
                 successCount,
                 failureCount
         );
@@ -217,7 +227,6 @@ public class BulkImportService {
         log.debug("Published GuestImportedEvent for event {}", eventId);
     }
 
-    // Wraps values containing commas or quotes so the CSV stays valid
     private String escapeCsv(String value) {
         if (value == null) return "";
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {

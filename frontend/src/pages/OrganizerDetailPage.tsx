@@ -55,9 +55,9 @@ const OrganizerDetailPage: React.FC = () => {
     const fetchDetail = async () => {
       try {
         const [orgRes, evRes, payRes] = await Promise.allSettled([
-          api.get<OrganizerDetail>(`/api/admin/organizers/${id}`),
-          api.get<OrganizerEvent[]>(`/api/admin/organizers/${id}/events`),
-          api.get<PaymentTransaction[]>(`/api/admin/organizers/${id}/payments`),
+          api.get<OrganizerDetail>(`/api/admin/users/${id}`),
+          api.get<OrganizerEvent[]>(`/api/events?createdBy=${id}`),
+          api.get<PaymentTransaction[]>(`/api/payments/transactions/all`),
         ]);
         if (orgRes.status === 'fulfilled') setOrganizer(orgRes.value.data);
         if (evRes.status  === 'fulfilled') setEvents(evRes.value.data);

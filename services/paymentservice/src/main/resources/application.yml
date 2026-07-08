@@ -17,6 +17,11 @@ spring:
         default_schema: payment
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
+  flyway:
+    enabled: true
+    schemas: payment
+    locations: classpath:db/migration
+    baseline-on-migrate: true
   data:
     redis:
       host: ${REDIS_HOST:localhost}

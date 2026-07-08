@@ -9,6 +9,7 @@ import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import Modal from '../components/ui/Modal';
 import Table, { Column } from '../components/ui/Table';
+import Pagination from '../components/ui/Pagination';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Users } from 'lucide-react';
@@ -20,9 +21,11 @@ interface Organizer {
   email: string;
   fullName: string;
   status: 'ACTIVE' | 'SUSPENDED' | 'PENDING_VERIFICATION' | 'DEACTIVATED';
-  tier: 'FREE' | 'PRO' | 'ENTERPRISE';
-  eventCount: number;
-  joinedAt: string;
+  tier?: 'FREE' | 'PRO' | 'ENTERPRISE';
+  role?: string;
+  eventCount?: number;
+  joinedAt?: string;
+  createdAt?: string;
 }
 
 const STATUS_BADGE: Record<string, 'success' | 'danger' | 'warning' | 'neutral'> = {
@@ -53,21 +56,25 @@ const OrganizersPage: React.FC = () => {
     organizer: Organizer | null;
     action: 'suspend' | 'reactivate';
   }>({ open: false, organizer: null, action: 'suspend' });
-  const [actioning, setActioning] = useState(false);
+  const [actioning,   setActioning]  = useState(false);
+  const [page,        setPage]        = useState(0);
+  const [totalPages,  setTotalPages]  = useState(0);
 
-  const fetchOrganizers = useCallback(async () => {
+  const fetchOrganizers = useCallback(async (p: number = 0) => {
     try {
-      const { data } = await api.get<Organizer[]>('/api/admin/organizers');
-      setOrganizers(data);
-      setFiltered(data);
+      const { data } = await api.get<any>(`/api/admin/users?page=${p}&size=10`);
+      const list = Array.isArray(data) ? data : (data.content ?? []);
+        setOrganizers(list);
+        setFiltered(list);
+      setTotalPages(data.totalPages ?? 0);
     } catch {
       toast.error('Failed to load organizers.');
     } finally {
       setLoading(false);
     }
   }, []);
+  useEffect(() => { fetchOrganizers(page); }, [fetchOrganizers, page]);
 
-  useEffect(() => { fetchOrganizers(); }, [fetchOrganizers]);
 
   // Client-side search — filters on name, email, or username
   useEffect(() => {
@@ -90,8 +97,8 @@ const OrganizersPage: React.FC = () => {
     setActioning(true);
     const { id, fullName } = confirmModal.organizer;
     const endpoint = confirmModal.action === 'suspend'
-      ? `/api/admin/organizers/${id}/suspend`
-      : `/api/admin/organizers/${id}/reactivate`;
+      ? `/api/admin/users/${id}/suspend`
+      : `/api/admin/users/${id}/suspend`;
 
     try {
       await api.patch(endpoint);
@@ -100,8 +107,11 @@ const OrganizersPage: React.FC = () => {
           ? `${fullName} suspended.`
           : `${fullName} reactivated.`
       );
+      // Optimistic update — flip status immediately without waiting for refetch
+      const newStatus = confirmModal.action === 'suspend' ? 'SUSPENDED' : 'ACTIVE';
+      setOrganizers(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
+      setFiltered(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
       setConfirmModal({ open: false, organizer: null, action: 'suspend' });
-      fetchOrganizers();
     } catch {
       toast.error('Action failed. Please try again.');
     } finally {
@@ -129,13 +139,13 @@ const OrganizersPage: React.FC = () => {
     {
       key: 'tier',
       header: 'Plan',
-      render: o => <Badge variant={TIER_BADGE[o.tier]}>{o.tier}</Badge>,
+      render: o => o.tier ? <Badge variant={TIER_BADGE[o.tier]}>{o.tier}</Badge> : <span className='text-slate-400 text-xs'>—</span>,
     },
     {
       key: 'eventCount',
       header: 'Events',
       sortable: true,
-      render: o => <span className="font-medium">{o.eventCount}</span>,
+      render: o => <span className="font-medium">{o.eventCount ?? '—'}</span>,
     },
     {
       key: 'status',
@@ -151,7 +161,7 @@ const OrganizersPage: React.FC = () => {
       header: 'Joined',
       render: o => (
         <span className="text-slate-500 text-xs">
-          {new Date(o.joinedAt).toLocaleDateString()}
+          {new Date(o.joinedAt ?? o.createdAt ?? '').toLocaleDateString()}
         </span>
       ),
     },
@@ -218,18 +228,21 @@ const OrganizersPage: React.FC = () => {
               <Spinner size="lg" />
             </div>
           ) : (
-            <Table
-              columns={columns}
-              data={filtered}
-              keyExtractor={o => o.id}
-              emptyState={
-                <EmptyState
-                  icon={<Users size={32} />}
-                  heading="No organizers found"
-                  subtext="Organizers appear here once they register."
-                />
-              }
-            />
+            <>
+              <Table
+                columns={columns}
+                data={filtered}
+                keyExtractor={o => o.id}
+                emptyState={
+                  <EmptyState
+                    icon={<Users size={32} />}
+                    heading="No organizers found"
+                    subtext="Organizers appear here once they register."
+                  />
+                }
+              />
+              <Pagination page={page} totalPages={totalPages} onPageChange={p => setPage(p)}/>
+            </>
           )}
         </Card>
       </div>

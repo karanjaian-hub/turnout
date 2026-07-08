@@ -19,6 +19,12 @@ spring:
         default_schema: guests
         format_sql: false
     show-sql: false
+  flyway:
+    enabled: true
+    schemas: guests
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    open-in-view: false
   data:
     redis:
       host: ${REDIS_HOST:localhost}

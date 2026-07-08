@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // ─── Page placeholders ────────────────────────────────────────────────────────
 // We stub every page now so the router compiles. Each gets replaced in 11.5–11.7.
@@ -55,7 +56,8 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 // ─── App ──────────────────────────────────────────────────────────────────────
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
       <AuthProvider>
         {/* Global toast notifications — top-right, navy accent */}
         <Toaster
@@ -112,6 +114,7 @@ const App: React.FC = () => (
         </React.Suspense>
       </AuthProvider>
     </BrowserRouter>
+      </ThemeProvider>
   </QueryClientProvider>
 );
 

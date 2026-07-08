@@ -59,6 +59,10 @@ public class NotificationKafkaConsumer {
         String recentKey = KEY_RECENT_RSVP.formatted(eventId);
         redisTemplate.opsForList().leftPush(recentKey, event);
         redisTemplate.opsForList().trim(recentKey, 0, 19);
+
+        // Platform-wide feed — maintained separately for the no-eventId dashboard endpoint
+        redisTemplate.opsForList().leftPush("recent-rsvps:platform", event);
+        redisTemplate.opsForList().trim("recent-rsvps:platform", 0, 49);
     }
 
     @KafkaListener(topics = com.turnout.common.kafka.KafkaEvents.EMAIL_STATUS,

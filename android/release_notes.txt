@@ -1,0 +1,1 @@
+Phase 1 complete — splash screen, FCM service, notification channels wired.

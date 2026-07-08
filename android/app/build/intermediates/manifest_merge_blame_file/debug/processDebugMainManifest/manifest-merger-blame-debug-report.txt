@@ -1,0 +1,603 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.turnout.android.debug"
+4    android:versionCode="1"
+5    android:versionName="1.0-debug" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="28"
+9        android:targetSdkVersion="36" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:4:5-67
+11-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:4:22-64
+12    <uses-permission android:name="android.permission.VIBRATE" />
+12-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:5:5-66
+12-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:5:22-63
+13    <!-- Required on Android 13+ to show push notifications -->
+14    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+14-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:7:5-77
+14-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:7:22-74
+15    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+15-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:8:5-72
+15-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:8:22-69
+16    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+16-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:9:5-74
+16-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:9:22-71
+17    <!-- Lets scheduled local notifications (e.g. event reminders) survive a phone restart -->
+18    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+18-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:11:5-81
+18-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:11:22-78
+19    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+19-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:22:5-79
+19-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:22:22-76
+20    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- Required by older versions of Google Play services to create IID tokens -->
+20-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:24:5-68
+20-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:24:22-65
+21    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+21-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:26:5-82
+21-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:26:22-79
+22    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+22-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:26:5-77
+22-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:26:22-74
+23
+24    <permission
+24-->[androidx.core:core:1.13.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/39a70b5cd2bbb4238860341314845cdb/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
+25        android:name="com.turnout.android.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+25-->[androidx.core:core:1.13.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/39a70b5cd2bbb4238860341314845cdb/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
+26        android:protectionLevel="signature" />
+26-->[androidx.core:core:1.13.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/39a70b5cd2bbb4238860341314845cdb/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
+27
+28    <uses-permission android:name="com.turnout.android.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+28-->[androidx.core:core:1.13.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/39a70b5cd2bbb4238860341314845cdb/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
+28-->[androidx.core:core:1.13.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/39a70b5cd2bbb4238860341314845cdb/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
+29
+30    <application
+30-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:13:5-66:19
+31        android:name="com.turnout.android.TurnoutApplication"
+31-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:14:9-43
+32        android:allowBackup="true"
+32-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:15:9-35
+33        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+33-->[androidx.core:core:1.13.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/39a70b5cd2bbb4238860341314845cdb/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
+34        android:debuggable="true"
+35        android:enableOnBackInvokedCallback="true"
+35-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:20:9-51
+36        android:extractNativeLibs="false"
+37        android:icon="@mipmap/ic_launcher"
+37-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:16:9-43
+38        android:label="Turnout"
+38-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:18:9-32
+39        android:roundIcon="@mipmap/ic_launcher_round"
+39-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:17:9-54
+40        android:supportsRtl="true"
+40-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:19:9-35
+41        android:theme="@style/Theme.Turnout.Splash" >
+41-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:21:9-52
+42        <activity
+42-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:23:9-48:20
+43            android:name="com.turnout.android.MainActivity"
+43-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:24:13-41
+44            android:exported="true"
+44-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:25:13-36
+45            android:windowSoftInputMode="adjustResize" >
+45-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:26:13-55
+46            <intent-filter>
+46-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:28:13-31:29
+47                <action android:name="android.intent.action.MAIN" />
+47-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:29:17-69
+47-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:29:25-66
+48
+49                <category android:name="android.intent.category.LAUNCHER" />
+49-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:30:17-77
+49-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:30:27-74
+50            </intent-filter>
+51
+52            <!--
+53                App Links: when a guest taps their invitation email link
+54                (https://app.turnout.app/rsvp?token=...), this intent-filter
+55                intercepts it and opens the app directly instead of the browser.
+56                Requires a /.well-known/assetlinks.json file on your domain (Phase 14.3).
+57            -->
+58            <intent-filter android:autoVerify="true" >
+58-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:39:13-47:29
+58-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:39:28-53
+59                <action android:name="android.intent.action.VIEW" />
+59-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:40:17-69
+59-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:40:25-66
+60
+61                <category android:name="android.intent.category.DEFAULT" />
+61-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:41:17-76
+61-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:41:27-73
+62                <category android:name="android.intent.category.BROWSABLE" />
+62-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:42:17-78
+62-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:42:27-75
+63
+64                <data
+65                    android:host="your-turnout-frontend.vercel.app"
+65-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:45:21-47
+66                    android:pathPrefix="/rsvp"
+66-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:46:21-47
+67                    android:scheme="https" />
+67-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:44:21-43
+68            </intent-filter>
+69        </activity>
+70
+71        <service
+71-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:50:9-57:19
+72            android:name="com.turnout.android.core.notifications.TurnoutFirebaseService"
+72-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:51:13-70
+73            android:exported="false"
+73-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:52:13-37
+74            android:permission="com.google.android.c2dm.permission.SEND" >
+74-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:53:13-73
+75            <intent-filter>
+75-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:54:13-56:29
+76                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+76-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:55:17-78
+76-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:55:25-75
+77            </intent-filter>
+78        </service>
+79
+80        <meta-data
+80-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:59:9-61:60
+81            android:name="com.google.firebase.messaging.default_notification_icon"
+81-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:60:13-83
+82            android:resource="@drawable/ic_notification" />
+82-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:61:13-57
+83        <meta-data
+83-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:62:9-64:44
+84            android:name="com.google.firebase.messaging.default_notification_channel_id"
+84-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:63:13-89
+85            android:value="turnout_rsvp" />
+85-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:64:13-41
+86
+87        <service
+87-->[com.google.firebase:firebase-messaging-ktx:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/63cc0250e615c7945ed181881a88d02d/transformed/jetified-firebase-messaging-ktx-24.0.0/AndroidManifest.xml:23:9-29:19
+88            android:name="com.google.firebase.components.ComponentDiscoveryService"
+88-->[com.google.firebase:firebase-messaging-ktx:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/63cc0250e615c7945ed181881a88d02d/transformed/jetified-firebase-messaging-ktx-24.0.0/AndroidManifest.xml:24:13-84
+89            android:directBootAware="true"
+89-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:32:13-43
+90            android:exported="false" >
+90-->[com.google.firebase:firebase-messaging-ktx:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/63cc0250e615c7945ed181881a88d02d/transformed/jetified-firebase-messaging-ktx-24.0.0/AndroidManifest.xml:25:13-37
+91            <meta-data
+91-->[com.google.firebase:firebase-messaging-ktx:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/63cc0250e615c7945ed181881a88d02d/transformed/jetified-firebase-messaging-ktx-24.0.0/AndroidManifest.xml:26:13-28:85
+92                android:name="com.google.firebase.components:com.google.firebase.messaging.ktx.FirebaseMessagingLegacyRegistrar"
+92-->[com.google.firebase:firebase-messaging-ktx:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/63cc0250e615c7945ed181881a88d02d/transformed/jetified-firebase-messaging-ktx-24.0.0/AndroidManifest.xml:27:17-129
+93                android:value="com.google.firebase.components.ComponentRegistrar" />
+93-->[com.google.firebase:firebase-messaging-ktx:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/63cc0250e615c7945ed181881a88d02d/transformed/jetified-firebase-messaging-ktx-24.0.0/AndroidManifest.xml:28:17-82
+94            <meta-data
+94-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:57:13-59:85
+95                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar"
+95-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:58:17-122
+96                android:value="com.google.firebase.components.ComponentRegistrar" />
+96-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:59:17-82
+97            <meta-data
+97-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:60:13-62:85
+98                android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
+98-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:61:17-119
+99                android:value="com.google.firebase.components.ComponentRegistrar" />
+99-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:62:17-82
+100            <meta-data
+100-->[com.google.firebase:firebase-installations:18.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/4b4798f4782e1551fa953d2ac68763b2/transformed/jetified-firebase-installations-18.0.0/AndroidManifest.xml:15:13-17:85
+101                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
+101-->[com.google.firebase:firebase-installations:18.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/4b4798f4782e1551fa953d2ac68763b2/transformed/jetified-firebase-installations-18.0.0/AndroidManifest.xml:16:17-130
+102                android:value="com.google.firebase.components.ComponentRegistrar" />
+102-->[com.google.firebase:firebase-installations:18.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/4b4798f4782e1551fa953d2ac68763b2/transformed/jetified-firebase-installations-18.0.0/AndroidManifest.xml:17:17-82
+103            <meta-data
+103-->[com.google.firebase:firebase-installations:18.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/4b4798f4782e1551fa953d2ac68763b2/transformed/jetified-firebase-installations-18.0.0/AndroidManifest.xml:18:13-20:85
+104                android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
+104-->[com.google.firebase:firebase-installations:18.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/4b4798f4782e1551fa953d2ac68763b2/transformed/jetified-firebase-installations-18.0.0/AndroidManifest.xml:19:17-127
+105                android:value="com.google.firebase.components.ComponentRegistrar" />
+105-->[com.google.firebase:firebase-installations:18.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/4b4798f4782e1551fa953d2ac68763b2/transformed/jetified-firebase-installations-18.0.0/AndroidManifest.xml:20:17-82
+106            <meta-data
+106-->[com.google.firebase:firebase-common-ktx:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/5cd0bab3c605baf96a89e997c1e9e08f/transformed/jetified-firebase-common-ktx-21.0.0/AndroidManifest.xml:12:13-14:85
+107                android:name="com.google.firebase.components:com.google.firebase.ktx.FirebaseCommonLegacyRegistrar"
+107-->[com.google.firebase:firebase-common-ktx:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/5cd0bab3c605baf96a89e997c1e9e08f/transformed/jetified-firebase-common-ktx-21.0.0/AndroidManifest.xml:13:17-116
+108                android:value="com.google.firebase.components.ComponentRegistrar" />
+108-->[com.google.firebase:firebase-common-ktx:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/5cd0bab3c605baf96a89e997c1e9e08f/transformed/jetified-firebase-common-ktx-21.0.0/AndroidManifest.xml:14:17-82
+109            <meta-data
+109-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:35:13-37:85
+110                android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar"
+110-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:36:17-109
+111                android:value="com.google.firebase.components.ComponentRegistrar" />
+111-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:37:17-82
+112            <meta-data
+112-->[com.google.firebase:firebase-datatransport:18.2.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/8d535e0b8b0e4160479785d30f96e967/transformed/jetified-firebase-datatransport-18.2.0/AndroidManifest.xml:25:13-27:85
+113                android:name="com.google.firebase.components:com.google.firebase.datatransport.TransportRegistrar"
+113-->[com.google.firebase:firebase-datatransport:18.2.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/8d535e0b8b0e4160479785d30f96e967/transformed/jetified-firebase-datatransport-18.2.0/AndroidManifest.xml:26:17-115
+114                android:value="com.google.firebase.components.ComponentRegistrar" />
+114-->[com.google.firebase:firebase-datatransport:18.2.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/8d535e0b8b0e4160479785d30f96e967/transformed/jetified-firebase-datatransport-18.2.0/AndroidManifest.xml:27:17-82
+115        </service>
+116
+117        <receiver
+117-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:29:9-40:20
+118            android:name="com.google.firebase.iid.FirebaseInstanceIdReceiver"
+118-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:30:13-78
+119            android:exported="true"
+119-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:31:13-36
+120            android:permission="com.google.android.c2dm.permission.SEND" >
+120-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:32:13-73
+121            <intent-filter>
+121-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:33:13-35:29
+122                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+122-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:34:17-81
+122-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:34:25-78
+123            </intent-filter>
+124
+125            <meta-data
+125-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:37:13-39:40
+126                android:name="com.google.android.gms.cloudmessaging.FINISHED_AFTER_HANDLED"
+126-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:38:17-92
+127                android:value="true" />
+127-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:39:17-37
+128        </receiver>
+129        <!--
+130             FirebaseMessagingService performs security checks at runtime,
+131             but set to not exported to explicitly avoid allowing another app to call it.
+132        -->
+133        <service
+133-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:46:9-53:19
+134            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+134-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:47:13-82
+135            android:directBootAware="true"
+135-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:48:13-43
+136            android:exported="false" >
+136-->[com.google.firebase:firebase-messaging:24.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/457802f69a31affa526e00633b6d99e2/transformed/jetified-firebase-messaging-24.0.0/AndroidManifest.xml:49:13-37
+137            <intent-filter android:priority="-500" >
+137-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:54:13-56:29
+138                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+138-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:55:17-78
+138-->/home/karanja-ian/turnout/android/app/src/main/AndroidManifest.xml:55:25-75
+139            </intent-filter>
+140        </service>
+141
+142        <activity
+142-->[com.google.android.gms:play-services-base:18.0.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/11f2b1d6d06586b780193e72fdc0ce2b/transformed/jetified-play-services-base-18.0.1/AndroidManifest.xml:20:9-22:45
+143            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+143-->[com.google.android.gms:play-services-base:18.0.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/11f2b1d6d06586b780193e72fdc0ce2b/transformed/jetified-play-services-base-18.0.1/AndroidManifest.xml:20:19-85
+144            android:exported="false"
+144-->[com.google.android.gms:play-services-base:18.0.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/11f2b1d6d06586b780193e72fdc0ce2b/transformed/jetified-play-services-base-18.0.1/AndroidManifest.xml:22:19-43
+145            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+145-->[com.google.android.gms:play-services-base:18.0.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/11f2b1d6d06586b780193e72fdc0ce2b/transformed/jetified-play-services-base-18.0.1/AndroidManifest.xml:21:19-78
+146
+147        <provider
+147-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:23:9-28:39
+148            android:name="com.google.firebase.provider.FirebaseInitProvider"
+148-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:24:13-77
+149            android:authorities="com.turnout.android.debug.firebaseinitprovider"
+149-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:25:13-72
+150            android:directBootAware="true"
+150-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:26:13-43
+151            android:exported="false"
+151-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:27:13-37
+152            android:initOrder="100" />
+152-->[com.google.firebase:firebase-common:21.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/84c57dab0a9786b80360b9b8d43b7ae5/transformed/jetified-firebase-common-21.0.0/AndroidManifest.xml:28:13-36
+153
+154        <service
+154-->[androidx.room:room-runtime:2.6.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/f7617d4953d7f6fddb1af6f7a8e3720b/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
+155            android:name="androidx.room.MultiInstanceInvalidationService"
+155-->[androidx.room:room-runtime:2.6.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/f7617d4953d7f6fddb1af6f7a8e3720b/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
+156            android:directBootAware="true"
+156-->[androidx.room:room-runtime:2.6.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/f7617d4953d7f6fddb1af6f7a8e3720b/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
+157            android:exported="false" />
+157-->[androidx.room:room-runtime:2.6.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/f7617d4953d7f6fddb1af6f7a8e3720b/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
+158
+159        <provider
+159-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:29:9-37:20
+160            android:name="androidx.startup.InitializationProvider"
+160-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:30:13-67
+161            android:authorities="com.turnout.android.debug.androidx-startup"
+161-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:31:13-68
+162            android:exported="false" >
+162-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:32:13-37
+163            <meta-data
+163-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:34:13-36:52
+164                android:name="androidx.work.WorkManagerInitializer"
+164-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:35:17-68
+165                android:value="androidx.startup" />
+165-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:36:17-49
+166            <meta-data
+166-->[androidx.emoji2:emoji2:1.3.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/d6b687a8176874ba51a7d54279375fde/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+167                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+167-->[androidx.emoji2:emoji2:1.3.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/d6b687a8176874ba51a7d54279375fde/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:30:17-75
+168                android:value="androidx.startup" />
+168-->[androidx.emoji2:emoji2:1.3.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/d6b687a8176874ba51a7d54279375fde/transformed/jetified-emoji2-1.3.0/AndroidManifest.xml:31:17-49
+169            <meta-data
+169-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/8b88e26f6378b6ce5b3f351e5a8190a4/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:29:13-31:52
+170                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+170-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/8b88e26f6378b6ce5b3f351e5a8190a4/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:30:17-78
+171                android:value="androidx.startup" />
+171-->[androidx.lifecycle:lifecycle-process:2.7.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/8b88e26f6378b6ce5b3f351e5a8190a4/transformed/jetified-lifecycle-process-2.7.0/AndroidManifest.xml:31:17-49
+172            <meta-data
+172-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+173                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+173-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+174                android:value="androidx.startup" />
+174-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+175        </provider>
+176
+177        <service
+177-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:39:9-45:35
+178            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+178-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:40:13-88
+179            android:directBootAware="false"
+179-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:41:13-44
+180            android:enabled="@bool/enable_system_alarm_service_default"
+180-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:42:13-72
+181            android:exported="false" />
+181-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:43:13-37
+182        <service
+182-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:46:9-52:35
+183            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+183-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:47:13-84
+184            android:directBootAware="false"
+184-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:48:13-44
+185            android:enabled="@bool/enable_system_job_service_default"
+185-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:49:13-70
+186            android:exported="true"
+186-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:50:13-36
+187            android:permission="android.permission.BIND_JOB_SERVICE" />
+187-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:51:13-69
+188        <service
+188-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:53:9-59:35
+189            android:name="androidx.work.impl.foreground.SystemForegroundService"
+189-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:54:13-81
+190            android:directBootAware="false"
+190-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:55:13-44
+191            android:enabled="@bool/enable_system_foreground_service_default"
+191-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:56:13-77
+192            android:exported="false" />
+192-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:57:13-37
+193
+194        <receiver
+194-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:61:9-66:35
+195            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+195-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:62:13-88
+196            android:directBootAware="false"
+196-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:63:13-44
+197            android:enabled="true"
+197-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:64:13-35
+198            android:exported="false" />
+198-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:65:13-37
+199        <receiver
+199-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:67:9-77:20
+200            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+200-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:68:13-106
+201            android:directBootAware="false"
+201-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:69:13-44
+202            android:enabled="false"
+202-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:70:13-36
+203            android:exported="false" >
+203-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:71:13-37
+204            <intent-filter>
+204-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:73:13-76:29
+205                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+205-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:74:17-87
+205-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:74:25-84
+206                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+206-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:75:17-90
+206-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:75:25-87
+207            </intent-filter>
+208        </receiver>
+209        <receiver
+209-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:78:9-88:20
+210            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+210-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:79:13-104
+211            android:directBootAware="false"
+211-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:80:13-44
+212            android:enabled="false"
+212-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:81:13-36
+213            android:exported="false" >
+213-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:82:13-37
+214            <intent-filter>
+214-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:84:13-87:29
+215                <action android:name="android.intent.action.BATTERY_OKAY" />
+215-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:85:17-77
+215-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:85:25-74
+216                <action android:name="android.intent.action.BATTERY_LOW" />
+216-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:86:17-76
+216-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:86:25-73
+217            </intent-filter>
+218        </receiver>
+219        <receiver
+219-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:89:9-99:20
+220            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+220-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:90:13-104
+221            android:directBootAware="false"
+221-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:91:13-44
+222            android:enabled="false"
+222-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:92:13-36
+223            android:exported="false" >
+223-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:93:13-37
+224            <intent-filter>
+224-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:95:13-98:29
+225                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+225-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:96:17-83
+225-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:96:25-80
+226                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+226-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:97:17-82
+226-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:97:25-79
+227            </intent-filter>
+228        </receiver>
+229        <receiver
+229-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:100:9-109:20
+230            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+230-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:101:13-103
+231            android:directBootAware="false"
+231-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:102:13-44
+232            android:enabled="false"
+232-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:103:13-36
+233            android:exported="false" >
+233-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:104:13-37
+234            <intent-filter>
+234-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:106:13-108:29
+235                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+235-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:107:17-79
+235-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:107:25-76
+236            </intent-filter>
+237        </receiver>
+238        <receiver
+238-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:110:9-121:20
+239            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+239-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:111:13-88
+240            android:directBootAware="false"
+240-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:112:13-44
+241            android:enabled="false"
+241-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:113:13-36
+242            android:exported="false" >
+242-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:114:13-37
+243            <intent-filter>
+243-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:116:13-120:29
+244                <action android:name="android.intent.action.BOOT_COMPLETED" />
+244-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:117:17-79
+244-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:117:25-76
+245                <action android:name="android.intent.action.TIME_SET" />
+245-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:118:17-73
+245-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:118:25-70
+246                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+246-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:119:17-81
+246-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:119:25-78
+247            </intent-filter>
+248        </receiver>
+249        <receiver
+249-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:122:9-131:20
+250            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+250-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:123:13-99
+251            android:directBootAware="false"
+251-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:124:13-44
+252            android:enabled="@bool/enable_system_alarm_service_default"
+252-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:125:13-72
+253            android:exported="false" >
+253-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:126:13-37
+254            <intent-filter>
+254-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:128:13-130:29
+255                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+255-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:129:17-98
+255-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:129:25-95
+256            </intent-filter>
+257        </receiver>
+258        <receiver
+258-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:132:9-142:20
+259            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+259-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:133:13-78
+260            android:directBootAware="false"
+260-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:134:13-44
+261            android:enabled="true"
+261-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:135:13-35
+262            android:exported="true"
+262-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:136:13-36
+263            android:permission="android.permission.DUMP" >
+263-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:137:13-57
+264            <intent-filter>
+264-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:139:13-141:29
+265                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+265-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:140:17-88
+265-->[androidx.work:work-runtime:2.9.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/6a58951fc0968b533bac1c57305f5708/transformed/work-runtime-2.9.0/AndroidManifest.xml:140:25-85
+266            </intent-filter>
+267        </receiver>
+268
+269        <uses-library
+269-->[androidx.window:window:1.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b04bb668d91756547e27201a61c5dcc7/transformed/jetified-window-1.0.0/AndroidManifest.xml:25:9-27:40
+270            android:name="androidx.window.extensions"
+270-->[androidx.window:window:1.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b04bb668d91756547e27201a61c5dcc7/transformed/jetified-window-1.0.0/AndroidManifest.xml:26:13-54
+271            android:required="false" />
+271-->[androidx.window:window:1.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b04bb668d91756547e27201a61c5dcc7/transformed/jetified-window-1.0.0/AndroidManifest.xml:27:13-37
+272        <uses-library
+272-->[androidx.window:window:1.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b04bb668d91756547e27201a61c5dcc7/transformed/jetified-window-1.0.0/AndroidManifest.xml:28:9-30:40
+273            android:name="androidx.window.sidecar"
+273-->[androidx.window:window:1.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b04bb668d91756547e27201a61c5dcc7/transformed/jetified-window-1.0.0/AndroidManifest.xml:29:13-51
+274            android:required="false" />
+274-->[androidx.window:window:1.0.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b04bb668d91756547e27201a61c5dcc7/transformed/jetified-window-1.0.0/AndroidManifest.xml:30:13-37
+275
+276        <activity
+276-->[androidx.compose.ui:ui-tooling-android:1.6.8] /home/karanja-ian/.gradle/caches/9.3.0/transforms/2795ad85c6e72ef5ba0818a5403bebf0/transformed/jetified-ui-tooling-release/AndroidManifest.xml:23:9-25:39
+277            android:name="androidx.compose.ui.tooling.PreviewActivity"
+277-->[androidx.compose.ui:ui-tooling-android:1.6.8] /home/karanja-ian/.gradle/caches/9.3.0/transforms/2795ad85c6e72ef5ba0818a5403bebf0/transformed/jetified-ui-tooling-release/AndroidManifest.xml:24:13-71
+278            android:exported="true" />
+278-->[androidx.compose.ui:ui-tooling-android:1.6.8] /home/karanja-ian/.gradle/caches/9.3.0/transforms/2795ad85c6e72ef5ba0818a5403bebf0/transformed/jetified-ui-tooling-release/AndroidManifest.xml:25:13-36
+279
+280        <meta-data
+280-->[com.google.android.gms:play-services-basement:18.3.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/70f753ecaf3b140ab2f922d8fd8c210d/transformed/jetified-play-services-basement-18.3.0/AndroidManifest.xml:21:9-23:69
+281            android:name="com.google.android.gms.version"
+281-->[com.google.android.gms:play-services-basement:18.3.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/70f753ecaf3b140ab2f922d8fd8c210d/transformed/jetified-play-services-basement-18.3.0/AndroidManifest.xml:22:13-58
+282            android:value="@integer/google_play_services_version" />
+282-->[com.google.android.gms:play-services-basement:18.3.0] /home/karanja-ian/.gradle/caches/9.3.0/transforms/70f753ecaf3b140ab2f922d8fd8c210d/transformed/jetified-play-services-basement-18.3.0/AndroidManifest.xml:23:13-66
+283
+284        <activity
+284-->[androidx.compose.ui:ui-test-manifest:1.6.8] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b16712423469ed24f79379972d00f698/transformed/jetified-ui-test-manifest-1.6.8/AndroidManifest.xml:23:9-25:39
+285            android:name="androidx.activity.ComponentActivity"
+285-->[androidx.compose.ui:ui-test-manifest:1.6.8] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b16712423469ed24f79379972d00f698/transformed/jetified-ui-test-manifest-1.6.8/AndroidManifest.xml:24:13-63
+286            android:exported="true" />
+286-->[androidx.compose.ui:ui-test-manifest:1.6.8] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b16712423469ed24f79379972d00f698/transformed/jetified-ui-test-manifest-1.6.8/AndroidManifest.xml:25:13-36
+287
+288        <receiver
+288-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+289            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+289-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+290            android:directBootAware="false"
+290-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+291            android:enabled="true"
+291-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+292            android:exported="true"
+292-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+293            android:permission="android.permission.DUMP" >
+293-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+294            <intent-filter>
+294-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+295                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+295-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+295-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+296            </intent-filter>
+297            <intent-filter>
+297-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+298                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+298-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+298-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+299            </intent-filter>
+300            <intent-filter>
+300-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+301                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+301-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+301-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+302            </intent-filter>
+303            <intent-filter>
+303-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+304                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+304-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+304-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/karanja-ian/.gradle/caches/9.3.0/transforms/c03c1cf34cc9b6118ba58220dbc8bfd0/transformed/jetified-profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+305            </intent-filter>
+306        </receiver>
+307
+308        <service
+308-->[com.google.android.datatransport:transport-backend-cct:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b48d70b15e318779f7425169d5d2756a/transformed/jetified-transport-backend-cct-3.1.9/AndroidManifest.xml:28:9-34:19
+309            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+309-->[com.google.android.datatransport:transport-backend-cct:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b48d70b15e318779f7425169d5d2756a/transformed/jetified-transport-backend-cct-3.1.9/AndroidManifest.xml:29:13-103
+310            android:exported="false" >
+310-->[com.google.android.datatransport:transport-backend-cct:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b48d70b15e318779f7425169d5d2756a/transformed/jetified-transport-backend-cct-3.1.9/AndroidManifest.xml:30:13-37
+311            <meta-data
+311-->[com.google.android.datatransport:transport-backend-cct:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b48d70b15e318779f7425169d5d2756a/transformed/jetified-transport-backend-cct-3.1.9/AndroidManifest.xml:31:13-33:39
+312                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+312-->[com.google.android.datatransport:transport-backend-cct:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b48d70b15e318779f7425169d5d2756a/transformed/jetified-transport-backend-cct-3.1.9/AndroidManifest.xml:32:17-94
+313                android:value="cct" />
+313-->[com.google.android.datatransport:transport-backend-cct:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/b48d70b15e318779f7425169d5d2756a/transformed/jetified-transport-backend-cct-3.1.9/AndroidManifest.xml:33:17-36
+314        </service>
+315        <service
+315-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:26:9-30:19
+316            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+316-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:27:13-117
+317            android:exported="false"
+317-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:28:13-37
+318            android:permission="android.permission.BIND_JOB_SERVICE" >
+318-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:29:13-69
+319        </service>
+320
+321        <receiver
+321-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:32:9-34:40
+322            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+322-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:33:13-132
+323            android:exported="false" />
+323-->[com.google.android.datatransport:transport-runtime:3.1.9] /home/karanja-ian/.gradle/caches/9.3.0/transforms/168017e189d375246198dc8e1a266ee1/transformed/jetified-transport-runtime-3.1.9/AndroidManifest.xml:34:13-37
+324    </application>
+325
+326</manifest>

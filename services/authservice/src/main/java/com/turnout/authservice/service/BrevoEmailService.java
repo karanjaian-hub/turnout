@@ -10,14 +10,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Map;
 
-/**
- * Sends transactional emails via Brevo HTTPS API.
- * Uses WebClient (non-blocking HTTP) instead of JavaMailSender
- * because SMTP port 25 is blocked on most cloud providers.
- *
- * All methods return void and swallow exceptions — a failed email
- * must never crash the registration or password reset flow.
- */
+// Sends transactional emails via Brevo HTTPS API.
+// Uses WebClient (non-blocking HTTP) instead of JavaMailSender
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,7 +34,6 @@ public class BrevoEmailService {
     @Value("${turnout.frontend.url}")
     private String frontendUrl;
 
-    // ── Public sending methods ────────────────────────────────────────────────
 
     public void sendOtpEmail(String toEmail, String toName, String otp) {
         String subject = "Your Turnout verification code";
@@ -61,8 +54,7 @@ public class BrevoEmailService {
         sendEmail(toEmail, toName, subject, html);
     }
 
-    // ── Core send method ──────────────────────────────────────────────────────
-
+// Core send method
     private void sendEmail(String toEmail, String toName, String subject, String html) {
         try {
             // Brevo expects this exact JSON structure
@@ -84,13 +76,12 @@ public class BrevoEmailService {
                     .block(); // safe — virtual threads make blocking cheap
 
         } catch (Exception e) {
-            // Log but never propagate — email failure must not fail registration
+// Log but never propagate — email failure must not fail registration
             log.error("Failed to send email to {}: {}", toEmail, e.getMessage());
         }
     }
 
-    // ── HTML templates ────────────────────────────────────────────────────────
-
+// HTML templates
     private String buildOtpEmailHtml(String name, String otp) {
         return """
             <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;">

@@ -29,15 +29,15 @@ interface CreateAdminForm {
 }
 
 const SERVICES: ServiceHealth[] = [
-  { name: 'api-gateway',       status: 'UNKNOWN', port: 8080 },
-  { name: 'authservice',       status: 'UNKNOWN', port: 8081 },
-  { name: 'eventservice',      status: 'UNKNOWN', port: 8082 },
-  { name: 'guestservice',      status: 'UNKNOWN', port: 8083 },
-  { name: 'emailservice',      status: 'UNKNOWN', port: 8084 },
-  { name: 'rsvpservice',       status: 'UNKNOWN', port: 8085 },
-  { name: 'notificationservice', status: 'UNKNOWN', port: 8086 },
-  { name: 'paymentservice',    status: 'UNKNOWN', port: 8087 },
-  { name: 'aiservice',         status: 'UNKNOWN', port: 8088 },
+  { name: 'api-gateway',          status: 'UNKNOWN', port: 8080 },
+  { name: 'auth-service',         status: 'UNKNOWN', port: 8081 },
+  { name: 'event-service',        status: 'UNKNOWN', port: 8082 },
+  { name: 'guest-service',        status: 'UNKNOWN', port: 8083 },
+  { name: 'email-service',        status: 'UNKNOWN', port: 8084 },
+  { name: 'rsvp-service',         status: 'UNKNOWN', port: 8085 },
+  { name: 'notification-service', status: 'UNKNOWN', port: 8086 },
+  { name: 'payment-service',      status: 'UNKNOWN', port: 8087 },
+  { name: 'ai-service',           status: 'UNKNOWN', port: 8088 },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ const SettingsPage: React.FC = () => {
   const checkHealth = useCallback(async () => {
     const results = await Promise.allSettled(
       SERVICES.map(svc =>
-        api.get(`/api/admin/health/${svc.name}`)
+        api.get('/api/admin/dashboard/system-health')
           .then(() => ({ ...svc, status: 'UP' as const }))
           .catch(() => ({ ...svc, status: 'DOWN' as const }))
       )
@@ -113,7 +113,7 @@ const SettingsPage: React.FC = () => {
     e.preventDefault();
     setCreatingAdmin(true);
     try {
-      await api.post('/api/admin/create-admin', adminForm);
+      await api.post('/api/auth/admin/create-admin', adminForm);
       toast.success(`Admin account created for ${adminForm.username}.`);
       setAdminForm({ username: '', email: '', fullName: '', password: '' });
     } catch (err: any) {

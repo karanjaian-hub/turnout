@@ -42,4 +42,4 @@ turnout:
   jwt:
     secret: ${JWT_SECRET:your-256-bit-secret-here-change-in-production}
   services:
-    event-service-url: ${EVENT_SERVICE_URL:http://localhost:8083}
+    event-service-url: ${EVENT_SERVICE_URL:http://eventservice:8082}

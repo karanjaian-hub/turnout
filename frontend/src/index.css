@@ -1,67 +1,72 @@
-/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ─── Tailwind directives ───────────────────────────────────────────────────── */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Global resets ─────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html {
-  /* Smooth scrolling everywhere */
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: #F8FAFC;
   color: #0F172A;
-  /* Prevents layout shift when a scrollbar appears/disappears */
   overflow-y: scroll;
 }
 
-/* ─── Custom scrollbar ──────────────────────────────────────────────────────── */
-/* Why: the default OS scrollbar looks out of place in a polished admin panel */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F1F5F9; }
+::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #2563EB; }
 
-::-webkit-scrollbar-track {
-  background: #F1F5F9;
-}
+a, button, input, select, textarea { transition: all 150ms ease; }
 
-::-webkit-scrollbar-thumb {
-  background: #1E3A5F;
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #2563EB;
-}
-
-/* ─── Smooth transitions on interactive elements ───────────────────────────── */
-/* Why: without this, hover state changes are jarring — they snap instead of fade */
-a, button, input, select, textarea {
-  transition: all 150ms ease;
-}
-
-/* ─── Typography defaults ───────────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
   font-weight: 600;
   color: #1E3A5F;
 }
 
-/* ─── Utility: hide the number input spinners ───────────────────────────────── */
-/* They look terrible in custom inputs */
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+:root {
+  --bg-app:         #F8FAFC;
+  --bg-card:        #FFFFFF;
+  --bg-sidebar:     #0B1422;
+  --bg-header:      #FFFFFF;
+  --border:         #E2E8F0;
+  --text-primary:   #0F172A;
+  --text-secondary: #64748B;
+  --text-muted:     #94A3B8;
+  --accent:         #2563EB;
+  --accent-hover:   #1D4ED8;
+  --success:        #16A34A;
+  --warning:        #D97706;
+  --danger:         #DC2626;
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+/* Global dark mode overrides for Tailwind classes */
+.bg-white     { background: var(--bg-card) !important; }
+.bg-slate-50  { background: var(--bg-app)  !important; }
+.bg-slate-100 { background: var(--bg-app)  !important; }
+.text-slate-700, .text-slate-600, .text-slate-500 { color: var(--text-secondary) !important; }
+.text-slate-800, .text-navy, .text-slate-900       { color: var(--text-primary)   !important; }
+.text-slate-400, .text-slate-300                   { color: var(--text-muted)     !important; }
+.border-slate-200, .border-slate-100 { border-color: var(--border) !important; }
+input, textarea, select {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
 }

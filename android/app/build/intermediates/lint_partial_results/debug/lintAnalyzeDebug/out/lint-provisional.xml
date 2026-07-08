@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.5.0" type="conditional_incidents">
+
+    <incident
+        id="UnusedAttribute"
+        severity="warning"
+        message="">
+        <fix-data minSdk="fffffffff8000000" requiresApi="ffffffff00000000"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*manifest*0}"
+            line="20"
+            column="9"
+            startOffset="974"
+            endLine="20"
+            endColumn="51"
+            endOffset="1016"/>
+        <map>
+            <api-levels id="minSdk"
+                value="fffffffff8000000"/>
+            <api-levels id="requiresApi"
+                value="ffffffff00000000"/>
+            <entry
+                name="message"
+                string="Attribute `enableOnBackInvokedCallback` is only used in API level 33 and higher (current min is %1$s)"/>
+        </map>
+    </incident>
+
+    <incident
+        id="NotificationPermission"
+        severity="error"
+        message="When targeting Android 13 or higher, posting a permission requires holding the `POST_NOTIFICATIONS` permission">
+        <fix-data missing="android.permission.POST_NOTIFICATIONS"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/turnout/android/core/notifications/TurnoutFirebaseService.kt"
+            line="57"
+            column="9"
+            startOffset="2411"
+            endLine="57"
+            endColumn="85"
+            endOffset="2487"/>
+    </incident>
+
+    <incident
+        id="MissingPermission"
+        severity="error"
+        message="">
+        <fix-data missing="android.permission.ACCESS_NETWORK_STATE" message="Missing permissions required by ConnectivityManager.registerNetworkCallback: %1$s" lastApi="2147483647"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/turnout/android/core/utils/ConnectivityObserver.kt"
+            line="58"
+            column="9"
+            startOffset="2337"
+            endLine="58"
+            endColumn="78"
+            endOffset="2406"/>
+        <map>
+            <entry
+                name="requirement"
+                string="android.permission.ACCESS_NETWORK_STATE"/>
+            <entry
+                name="message"
+                string="Missing permissions required by ConnectivityManager.registerNetworkCallback: %1$s"/>
+        </map>
+    </incident>
+
+</incidents>

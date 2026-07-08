@@ -6,6 +6,9 @@ import com.turnout.paymentservice.dto.*;
 import com.turnout.paymentservice.entity.SubscriptionPlan;
 import com.turnout.paymentservice.entity.UpgradeRequest;
 import com.turnout.paymentservice.entity.UserSubscription;
+import com.turnout.paymentservice.entity.PaymentTransaction;
+import com.turnout.paymentservice.enums.PaymentProvider;
+import com.turnout.paymentservice.enums.PaymentStatus;
 import com.turnout.paymentservice.enums.UpgradeRequestStatus;
 import com.turnout.paymentservice.repository.SubscriptionPlanRepository;
 import com.turnout.paymentservice.repository.PaymentTransactionRepository;
@@ -14,16 +17,25 @@ import com.turnout.paymentservice.repository.UserSubscriptionRepository;
 import com.turnout.paymentservice.service.MpesaService;
 import com.turnout.paymentservice.service.StripeService;
 import com.turnout.paymentservice.service.TierCheckService;
+import com.turnout.paymentservice.service.UserLookupService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -31,23 +43,20 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentController {
 
-    private final MpesaService              mpesaService;
-    private final StripeService             stripeService;
-    private final TierCheckService          tierCheckService;
-    private final SubscriptionPlanRepository planRepo;
-    private final UserSubscriptionRepository subscriptionRepo;
+    private final MpesaService                 mpesaService;
+    private final StripeService                stripeService;
+    private final TierCheckService             tierCheckService;
+    private final UserLookupService            userLookupService;
+    private final SubscriptionPlanRepository   planRepo;
+    private final UserSubscriptionRepository   subscriptionRepo;
     private final PaymentTransactionRepository transactionRepo;
-    private final UpgradeRequestRepository  upgradeRequestRepo;
+    private final UpgradeRequestRepository     upgradeRequestRepo;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     // ------------------------------------------------------------------ //
     //  M-Pesa                                                              //
     // ------------------------------------------------------------------ //
 
-    /**
-     * Initiates an STK Push to the user's phone.
-     * Returns 202 Accepted — the actual payment result arrives asynchronously
-     * via the M-Pesa callback endpoint below.
-     */
     @PostMapping("/upgrade/mpesa")
     public ResponseEntity<StkPushResponse> initiateMpesaUpgrade(
             @RequestHeader("X-User-Id") UUID userId,
@@ -67,10 +76,6 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
-    /**
-     * Public endpoint — Safaricom POSTs here after the user completes or
-     * cancels the STK prompt. No JWT, signature verified inside MpesaService.
-     */
     @PostMapping("/mpesa/callback")
     public ResponseEntity<Void> mpesaCallback(@RequestBody Map<String, Object> callbackBody) {
         mpesaService.processMpesaCallback(callbackBody);
@@ -81,10 +86,6 @@ public class PaymentController {
     //  Stripe                                                              //
     // ------------------------------------------------------------------ //
 
-    /**
-     * Creates a Stripe-hosted checkout session and returns the URL.
-     * The frontend redirects the user to that URL to complete payment.
-     */
     @PostMapping("/upgrade/stripe")
     public ResponseEntity<StripeSessionResponse> initiateStripeUpgrade(
             @RequestHeader("X-User-Id") UUID userId,
@@ -101,10 +102,9 @@ public class PaymentController {
     }
 
     /**
-     * Public endpoint — Stripe POSTs signed events here.
-     * WHY @RequestBody String: we need the raw payload bytes to verify
-     * the HMAC signature. If we let Spring deserialize it to a Map first,
-     * the byte order may change and signature verification will fail.
+     * WHY @RequestBody String: we need the raw payload to verify HMAC-SHA256.
+     * If Spring deserializes it to Map first, byte ordering may differ and
+     * signature verification will fail.
      */
     @PostMapping("/stripe/webhook")
     public ResponseEntity<Void> stripeWebhook(
@@ -145,10 +145,6 @@ public class PaymentController {
     //  Enterprise Upgrade Requests                                         //
     // ------------------------------------------------------------------ //
 
-    /**
-     * Users on any tier can request an Enterprise upgrade.
-     * Guard: reject if they already have a pending request — no duplicates.
-     */
     @PostMapping("/upgrade/enterprise")
     public ResponseEntity<UpgradeRequest> requestEnterpriseUpgrade(
             @RequestHeader("X-User-Id") UUID userId,
@@ -172,12 +168,6 @@ public class PaymentController {
                 .body(upgradeRequestRepo.save(upgradeRequest));
     }
 
-    /**
-     * ADMIN / SUPER_ADMIN only — approves an enterprise upgrade request.
-     * WHY we check X-User-Role here and not via Spring Security:
-     * the gateway already validated the JWT and forwarded the role as a header.
-     * We trust that header because only the gateway sets it — external clients can't.
-     */
     @PatchMapping("/upgrade/approve/{id}")
     public ResponseEntity<UpgradeRequest> approveUpgradeRequest(
             @RequestHeader("X-User-Id") UUID adminId,
@@ -219,16 +209,146 @@ public class PaymentController {
     }
 
     // ------------------------------------------------------------------ //
-    //  Tier Check — consumed by event-service                             //
+    //  Tier Check — internal, consumed by event-service                   //
     // ------------------------------------------------------------------ //
 
-    /**
-     * Called internally by event-service before creating events or adding guests.
-     * Not exposed to end users — event-service calls this service-to-service.
-     */
     @GetMapping("/tier-check/{userId}")
     public ResponseEntity<TierLimitsResponse> getTierLimits(@PathVariable UUID userId) {
         return ResponseEntity.ok(tierCheckService.getTierLimits(userId));
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Gap 2 — All transactions (ADMIN only, paginated, filterable)       //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Returns all payment transactions across all users — admin Payments page.
+     * Optional filters: provider, status. Sorted by createdAt desc.
+     * Each record is enriched with username/email via a WebClient call to auth-service.
+     */
+    @GetMapping("/transactions/all")
+    public ResponseEntity<Page<PaymentTransactionResponse>> getAllTransactions(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(required = false) PaymentProvider provider,
+            @RequestParam(required = false) PaymentStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        requireAdminRole(role);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<PaymentTransaction> rawPage = transactionRepo.findAll(pageable);
+
+        // Filter in-memory after fetch — avoids a custom JPQL query for optional combos
+        List<PaymentTransaction> filtered = rawPage.getContent().stream()
+                .filter(tx -> provider == null || tx.getProvider() == provider)
+                .filter(tx -> status   == null || tx.getStatus()   == status)
+                .collect(Collectors.toList());
+
+        List<PaymentTransactionResponse> enriched = filtered.stream()
+                .map(tx -> {
+                    UserLookupResponse user = userLookupService.lookup(tx.getUserId());
+                    return new PaymentTransactionResponse(
+                            tx.getId(),
+                            tx.getUserId(),
+                            user.username(),
+                            user.email(),
+                            tx.getPlanId(),
+                            tx.getProvider(),
+                            tx.getAmount(),
+                            tx.getCurrency(),
+                            tx.getStatus(),
+                            tx.getCreatedAt()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new PageImpl<>(enriched, pageable, rawPage.getTotalElements()));
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Gap 3 — Pending enterprise upgrade requests (ADMIN only)           //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Returns upgrade requests filtered by status (PENDING by default).
+     * Each record enriched with username/email from auth-service.
+     */
+    @GetMapping("/upgrade/requests")
+    public ResponseEntity<Page<UpgradeRequestResponse>> getUpgradeRequests(
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(defaultValue = "PENDING") UpgradeRequestStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        requireAdminRole(role);
+
+        List<UpgradeRequest> requests = upgradeRequestRepo.findByStatus(status);
+
+        List<UpgradeRequestResponse> enriched = requests.stream()
+                .map(req -> {
+                    UserLookupResponse user = userLookupService.lookup(req.getUserId());
+                    return new UpgradeRequestResponse(
+                            req.getId(),
+                            req.getUserId(),
+                            user.username(),
+                            user.email(),
+                            req.getRequestedPlan(),
+                            req.getStatus(),
+                            req.getAdminNotes(),
+                            req.getCreatedAt()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        Pageable pageable = PageRequest.of(page, size);
+        int start = (int) pageable.getOffset();
+        int end   = Math.min(start + pageable.getPageSize(), enriched.size());
+
+        return ResponseEntity.ok(
+                new PageImpl<>(enriched.subList(start, end), pageable, enriched.size()));
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Gap 4 — Edit tier limits (SUPER_ADMIN only)                        //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Allows SUPER_ADMIN to update plan limits from the Settings page.
+     * Only non-null fields in the request body are applied — partial update.
+     * Publishes 'turnout.plan.updated' so event-service and guest-service
+     * can invalidate any cached tier-limit lookups.
+     */
+    @PutMapping("/plans/{id}")
+    public ResponseEntity<SubscriptionPlan> updatePlan(
+            @RequestHeader("X-User-Role") String role,
+            @PathVariable UUID id,
+            @RequestBody UpdatePlanRequest request) {
+
+        requireSuperAdminRole(role);
+
+        SubscriptionPlan plan = planRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("SubscriptionPlan", id));
+
+        if (request.maxEvents()         != null) plan.setMaxEvents(request.maxEvents());
+        if (request.maxGuestsPerEvent() != null) plan.setMaxGuestsPerEvent(request.maxGuestsPerEvent());
+        if (request.monthlyPriceKes()   != null) plan.setMonthlyPriceKes(request.monthlyPriceKes());
+        if (request.monthlyPriceUsd()   != null) plan.setMonthlyPriceUsd(request.monthlyPriceUsd());
+        if (request.active()            != null) plan.setActive(request.active());
+
+        SubscriptionPlan updated = planRepo.save(plan);
+
+        // Notify other services that cached limits need refreshing
+        kafkaTemplate.send("turnout.plan.updated", updated.getId().toString(), Map.of(
+                "planId",           updated.getId().toString(),
+                "planName",         updated.getPlanName(),
+                "maxEvents",        updated.getMaxEvents(),
+                "maxGuestsPerEvent",updated.getMaxGuestsPerEvent(),
+                "timestamp",        LocalDateTime.now().toString()
+        ));
+
+        log.info("Plan {} updated by SUPER_ADMIN", updated.getPlanName());
+        return ResponseEntity.ok(updated);
     }
 
     // ------------------------------------------------------------------ //
@@ -238,6 +358,12 @@ public class PaymentController {
     private void requireAdminRole(String role) {
         if (!"ADMIN".equals(role) && !"SUPER_ADMIN".equals(role)) {
             throw new UnauthorizedAccessException("Admin access required");
+        }
+    }
+
+    private void requireSuperAdminRole(String role) {
+        if (!"SUPER_ADMIN".equals(role)) {
+            throw new UnauthorizedAccessException("Super admin access required");
         }
     }
 }

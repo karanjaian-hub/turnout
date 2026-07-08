@@ -6,13 +6,15 @@ import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import Table, { Column } from '../components/ui/Table';
+import Pagination from '../components/ui/Pagination';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface AdminEvent {
   id: string;
   title: string;
-  organizerName: string;
+  organizerName?: string;
+  createdBy?: string;
   eventDate: string;
   location: string;
   status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
@@ -35,20 +37,25 @@ const EventsBrowserPage: React.FC = () => {
   const [search, setSearch]     = useState('');
   const [status, setStatus]     = useState('ALL');
   const [loading, setLoading]   = useState(true);
+  const [page,       setPage]       = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const fetchEvents = useCallback(async () => {
+  const fetchEvents = useCallback(async (p: number = 0) => {
     try {
-      const { data } = await api.get<AdminEvent[]>('/api/admin/events');
-      setEvents(data);
-      setFiltered(data);
+      const { data } = await api.get<any>(`/api/events?page=${p}&size=10`);
+      const list = Array.isArray(data) ? data : (data.content ?? []);
+      setEvents(list);
+      setFiltered(list);
+      setTotalPages(data.totalPages ?? 0);
     } catch {
       toast.error('Failed to load events.');
     } finally {
       setLoading(false);
     }
   }, []);
+  useEffect(() => { fetchEvents(page); }, [fetchEvents, page]);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
 
   useEffect(() => {
     let result = events;
@@ -57,7 +64,7 @@ const EventsBrowserPage: React.FC = () => {
       const q = search.toLowerCase();
       result = result.filter(e =>
         e.title.toLowerCase().includes(q) ||
-        e.organizerName.toLowerCase().includes(q) ||
+        ( e.organizerName ?? '').toLowerCase().includes(q) ||
         e.location.toLowerCase().includes(q)
       );
     }
@@ -79,7 +86,7 @@ const EventsBrowserPage: React.FC = () => {
     {
       key: 'organizer',
       header: 'Organizer',
-      render: e => <span className="text-slate-600">{e.organizerName}</span>,
+      render: e => <span className="text-slate-600">{e.organizerName ?? e.createdBy ?? '—'}</span>,
     },
     {
       key: 'date',
@@ -144,18 +151,21 @@ const EventsBrowserPage: React.FC = () => {
           {loading ? (
             <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
           ) : (
-            <Table
-              columns={columns}
-              data={filtered}
-              keyExtractor={e => e.id}
-              emptyState={
-                <EmptyState
-                  icon={<Calendar size={32} />}
-                  heading="No events found"
-                  subtext="Events created by organizers appear here."
-                />
-              }
-            />
+            <>
+              <Table
+                columns={columns}
+                data={filtered}
+                keyExtractor={e => e.id}
+                emptyState={
+                  <EmptyState
+                    icon={<Calendar size={32} />}
+                    heading="No events found"
+                    subtext="Events created by organizers appear here."
+                  />
+                }
+              />
+              <Pagination page={page} totalPages={totalPages} onPageChange={p => setPage(p)}/>
+            </>
           )}
         </Card>
       </div>

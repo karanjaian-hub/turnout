@@ -3,16 +3,20 @@ package com.turnout.authservice.controller;
 import com.turnout.authservice.dto.*;
 import com.turnout.authservice.entity.User;
 import com.turnout.authservice.repository.UserRepository;
+import com.turnout.authservice.service.AdminUserService;
 import com.turnout.authservice.service.AuthService;
 import com.turnout.common.exception.ResourceNotFoundException;
+import com.turnout.common.exception.UnauthorizedAccessException;
 import com.turnout.common.security.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,8 +24,12 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final AdminUserService adminUserService;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final long FCM_TTL_SECONDS = 2_592_000L; // 30 days
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(
@@ -56,12 +64,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(
-            // Gateway forwards the user ID and JTI as headers after validating the token.
-            // The raw token is not forwarded — we never re-parse it here.
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-Token-Jti") String jti,
-            @RequestHeader("X-Token-Expiry-Ms") long tokenRemainingMs) {
-        return ResponseEntity.ok(authService.logout(userId, jti, tokenRemainingMs));
+            @RequestHeader("X-User-Id") String userId) {
+        return ResponseEntity.ok(authService.logout(userId));
     }
 
     @PostMapping("/forgot-password")
@@ -78,13 +82,9 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(
-            // Gateway extracts the user ID from the JWT and forwards it as a header.
-            // The auth service never validates tokens itself.
             @RequestHeader("X-User-Id") String userId) {
-
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
-
         return ResponseEntity.ok(new UserResponse(
                 user.getId(),
                 user.getUsername(),
@@ -95,4 +95,36 @@ public class AuthController {
                 user.isEmailVerified()
         ));
     }
+
+    // Stores the Android FCM push token in Redis so the notification service
+    // can look it up when sending push notifications to this user.
+    @PostMapping("/fcm-token")
+    public ResponseEntity<MessageResponse> storeFcmToken(
+            @RequestHeader("X-User-Id") String userId,
+            @Valid @RequestBody FcmTokenRequest request) {
+        redisTemplate.opsForValue().set(
+                "fcm:" + userId,
+                request.fcmToken(),
+                FCM_TTL_SECONDS,
+                TimeUnit.SECONDS
+        );
+        return ResponseEntity.ok(new MessageResponse("FCM token stored.", true));
+    }
+
+    // Internal endpoint — called by other services (payment-service etc.)
+    // via WebClient to resolve a userId to basic profile info.
+    // Never returns password or sensitive fields.
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserLookupResponse> lookupUser(@PathVariable UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        return ResponseEntity.ok(new UserLookupResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName()
+        ));
+    }
+
+
 }

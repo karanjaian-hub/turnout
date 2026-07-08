@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "email_logs")
@@ -20,7 +21,10 @@ public class EmailLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // The Kafka topic this email request came from (e.g. "user.registered")
+    private UUID eventId;
+
+    private String guestId;
+
     @Column(nullable = false)
     private String eventType;
 
@@ -29,21 +33,17 @@ public class EmailLog {
 
     private String recipientName;
 
-    // Subject line we sent to Brevo
     @Column(nullable = false)
     private String subject;
 
-    // SUCCESS or FAILED — stored as string so it's readable in the DB without enum mappings
     @Column(nullable = false)
     private String status;
 
-    // Brevo's message ID on success, or the error message on failure
     @Column(columnDefinition = "TEXT")
     private String providerResponse;
 
     @Column(nullable = false)
     private LocalDateTime attemptedAt;
 
-    // Populated only on success
     private LocalDateTime deliveredAt;
 }

@@ -13,12 +13,19 @@ import toast from 'react-hot-toast';
 
 interface EnterpriseRequest {
   id: string;
-  organizerName: string;
-  organizerEmail: string;
-  currentTier: string;
-  requestedAt: string;
+  userId: string;
+  username: string;
+  email: string;
+  requestedPlan: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  reason: string;
+  adminNotes?: string;
+  createdAt: string;
+  // legacy aliases kept for render compatibility
+  organizerName?: string;
+  organizerEmail?: string;
+  currentTier?: string;
+  requestedAt?: string;
+  reason?: string;
 }
 
 const EnterpriseRequestsPage: React.FC = () => {
@@ -36,8 +43,8 @@ const EnterpriseRequestsPage: React.FC = () => {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const { data } = await api.get<EnterpriseRequest[]>('/api/payments/upgrade/requests');
-      setRequests(data);
+      const { data } = await api.get<any>('/api/payments/upgrade/requests');
+      setRequests(Array.isArray(data) ? data : (data.content ?? []));
     } catch {
       toast.error('Failed to load enterprise requests.');
     } finally {
@@ -80,27 +87,27 @@ const EnterpriseRequestsPage: React.FC = () => {
       header: 'Organizer',
       render: r => (
         <div>
-          <p className="font-medium text-navy">{r.organizerName}</p>
-          <p className="text-xs text-slate-400">{r.organizerEmail}</p>
+          <p className="font-medium text-navy">{r.organizerName ?? r.username}</p>
+          <p className="text-xs text-slate-400">{r.organizerEmail ?? r.email}</p>
         </div>
       ),
     },
     {
       key: 'currentTier',
       header: 'Current Plan',
-      render: r => <Badge variant="info">{r.currentTier}</Badge>,
+      render: r => <Badge variant="info">{r.currentTier ?? r.requestedPlan}</Badge>,
     },
     {
       key: 'reason',
       header: 'Reason',
       render: r => (
-        <span className="text-slate-500 text-xs line-clamp-2 max-w-xs">{r.reason}</span>
+        <span className="text-slate-500 text-xs line-clamp-2 max-w-xs">{r.reason ?? r.adminNotes ?? '—'}</span>
       ),
     },
     {
       key: 'requestedAt',
       header: 'Requested',
-      render: r => new Date(r.requestedAt).toLocaleDateString(),
+      render: r => new Date(r.requestedAt ?? r.createdAt).toLocaleDateString(),
     },
     {
       key: 'status',
@@ -172,8 +179,8 @@ const EnterpriseRequestsPage: React.FC = () => {
       >
         <p className="text-sm text-slate-600 mb-4">
           {modal.action === 'approve'
-            ? `Approve ${modal.request?.organizerName} for the ENTERPRISE plan?`
-            : `Reject the enterprise request from ${modal.request?.organizerName}?`
+            ? `Approve ${modal.request?.organizerName ?? modal.request?.username} for the ${modal.request?.requestedPlan ?? 'ENTERPRISE'} plan?`
+            : `Reject the enterprise request from ${modal.request?.organizerName ?? modal.request?.username}?`
           }
         </p>
         <div className="mb-6">

@@ -24,6 +24,11 @@ spring:
         default_schema: auth
         format_sql: false
     show-sql: false
+  flyway:
+    enabled: true
+    schemas: auth
+    locations: classpath:db/migration
+    baseline-on-migrate: true
 
   data:
     redis:

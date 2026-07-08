@@ -1,6 +1,10 @@
 package com.turnout.eventservice.controller;
 
 import com.turnout.eventservice.dto.*;
+import com.turnout.common.enums.EventStatus;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDateTime;
 import com.turnout.eventservice.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,11 +32,35 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EventResponse>> listEvents(
+    public ResponseEntity<PagedEventResponse> listEvents(
             @RequestHeader("X-User-Id")   String userId,
-            @RequestHeader("X-User-Role") String role) {
+            @RequestHeader("X-User-Role") String role,
+            @RequestParam(required = false) UUID organizerId,
+            @RequestParam(required = false) EventStatus status,
+            @RequestParam(required = false)
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
+            @RequestParam(required = false)
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-        return ResponseEntity.ok(eventService.listEvents(UUID.fromString(userId), role));
+        return ResponseEntity.ok(eventService.listEvents(
+                UUID.fromString(userId), role,
+                organizerId, status, dateFrom, dateTo,
+                page, size));
+    }
+
+    // No auth headers required — public RSVP landing page for guests.
+    // Must be declared before /{id} so Spring doesn't try to parse "public" as a UUID.
+    @GetMapping("/{id}/public")
+    public ResponseEntity<PublicEventResponse> getPublicEvent(@PathVariable UUID id) {
+        return ResponseEntity.ok(eventService.getPublicEvent(id));
+    }
+
+    // No auth headers required — same anonymous guest flow as /public.
+    @GetMapping("/{id}/capacity")
+    public ResponseEntity<CapacityResponse> getCapacity(@PathVariable UUID id) {
+        return ResponseEntity.ok(eventService.getCapacity(id));
     }
 
     @GetMapping("/{id}")

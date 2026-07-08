@@ -38,6 +38,12 @@ spring:
           filters:
             - JwtAuthentication
 
+        # Internal service-to-service endpoints — no JWT, never exposed to end users
+        - id: auth-internal
+          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          predicates:
+            - Path=/api/internal/**
+
         # All other auth endpoints are public (login, register, refresh, otp etc.)
         - id: auth-public
           uri: http://${AUTH_SERVICE_HOST:authservice}:8081
@@ -83,6 +89,13 @@ spring:
           uri: http://${EMAIL_SERVICE_HOST:emailservice}:8084
           predicates:
             - Path=/api/emails/**
+          filters:
+            - JwtAuthentication
+
+        - id: auth-admin-endpoints
+          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          predicates:
+            - Path=/api/admin/users/**, /api/admin/create-admin
           filters:
             - JwtAuthentication
 
@@ -141,6 +154,11 @@ spring:
             - Path=/api/auth/me, /api/auth/logout
           filters:
             - JwtAuthentication
+        - id: auth-internal
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/internal/**
+
 
         - id: auth-public
           uri: http://localhost:8081
@@ -186,6 +204,13 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path=/api/emails/**
+          filters:
+            - JwtAuthentication
+
+        - id: auth-admin-endpoints
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/admin/users/**, /api/admin/create-admin
           filters:
             - JwtAuthentication
 

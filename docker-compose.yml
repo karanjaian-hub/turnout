@@ -14,6 +14,7 @@ services:
     image: postgres:15-alpine
     container_name: turnout_postgres
     restart: unless-stopped
+    mem_limit: 384m
     environment:
       POSTGRES_DB: turnout_db
       POSTGRES_USER: ${POSTGRES_USER}
@@ -35,6 +36,7 @@ services:
     image: redis:7-alpine
     container_name: turnout_redis
     restart: unless-stopped
+    mem_limit: 128m
     ports:
       - "6379:6379"
     volumes:
@@ -51,6 +53,7 @@ services:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: turnout_zookeeper
     restart: unless-stopped
+    mem_limit: 384m
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -63,6 +66,7 @@ services:
     image: confluentinc/cp-kafka:7.6.0
     container_name: turnout_kafka
     restart: unless-stopped
+    mem_limit: 512m
     depends_on:
       - zookeeper
     ports:
@@ -75,6 +79,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_HEAP_OPTS: "-Xmx256m -Xms128m"
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
       interval: 15s
@@ -93,6 +98,7 @@ services:
         SERVICE_PATH: api-gateway
     container_name: turnout_api_gateway
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8080:8080"
     healthcheck:
@@ -113,6 +119,7 @@ services:
       NOTIFICATIONSERVICE_URL: http://notificationservice:8086
       PAYMENTSERVICE_URL: http://paymentservice:8087
       AISERVICE_URL: http://aiservice:8088
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       redis:
         condition: service_healthy
@@ -127,6 +134,7 @@ services:
         SERVICE_PATH: services/authservice
     container_name: turnout_authservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8081:8081"
     healthcheck:
@@ -150,6 +158,7 @@ services:
       BREVO_API_KEY: ${BREVO_API_KEY}
       BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
       FRONTEND_URL: ${FRONTEND_URL}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -166,6 +175,7 @@ services:
         SERVICE_PATH: services/eventservice
     container_name: turnout_eventservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8082:8082"
     healthcheck:
@@ -185,6 +195,7 @@ services:
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -203,6 +214,7 @@ services:
         SERVICE_PATH: services/guestservice
     container_name: turnout_guestservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8083:8083"
     healthcheck:
@@ -222,6 +234,7 @@ services:
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -239,6 +252,7 @@ services:
       args:
         SERVICE_PATH: services/emailservice
     container_name: turnout_emailservice
+    mem_limit: 384m
     restart: unless-stopped
     ports:
       - "8084:8084"
@@ -260,6 +274,7 @@ services:
       BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
       BREVO_SENDER_NAME: ${BREVO_SENDER_NAME}
       JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -276,6 +291,7 @@ services:
         SERVICE_PATH: services/rsvpservice
     container_name: turnout_rsvpservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8085:8085"
     healthcheck:
@@ -295,6 +311,7 @@ services:
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -313,6 +330,7 @@ services:
         SERVICE_PATH: services/notificationservice
     container_name: turnout_notificationservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8086:8086"
     healthcheck:
@@ -327,6 +345,7 @@ services:
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       redis:
         condition: service_healthy
@@ -343,6 +362,7 @@ services:
         SERVICE_PATH: services/paymentservice
     container_name: turnout_paymentservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8087:8087"
     healthcheck:
@@ -367,6 +387,7 @@ services:
       MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET}
       MPESA_PASSKEY: ${MPESA_PASSKEY}
       MPESA_SHORTCODE: ${MPESA_SHORTCODE}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:
         condition: service_healthy
@@ -385,6 +406,7 @@ services:
         SERVICE_PATH: services/aiservice
     container_name: turnout_aiservice
     restart: unless-stopped
+    mem_limit: 384m
     ports:
       - "8088:8088"
     healthcheck:
@@ -399,6 +421,7 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET}
       GROQ_API_KEY: ${GROQ_API_KEY}
+      JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       redis:
         condition: service_healthy

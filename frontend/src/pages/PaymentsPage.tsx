@@ -6,14 +6,15 @@ import StatCard from '../components/ui/StatCard';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import Table, { Column } from '../components/ui/Table';
+import Pagination from '../components/ui/Pagination';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface PaymentSummary {
-  totalRevenue: number;
-  mpesaRevenue: number;
-  stripeRevenue: number;
-  transactionCount: number;
+  totalRevenueKes: number;
+  totalConfirmedRsvps: number;
+  totalOrganizers: number;
+  totalEvents: number;
 }
 
 interface Transaction {
@@ -22,13 +23,16 @@ interface Transaction {
   amount: number;
   currency: string;
   provider: 'MPESA' | 'STRIPE';
-  status: 'SUCCESS' | 'FAILED' | 'PENDING' | 'REFUNDED';
-  description: string;
+  status: 'COMPLETED' | 'FAILED' | 'PENDING' | 'REFUNDED';
+  description?: string;
+  username?: string;
+  email?: string;
   createdAt: string;
 }
 
 const STATUS_BADGE: Record<string, 'success' | 'danger' | 'warning' | 'neutral'> = {
   SUCCESS:  'success',
+  COMPLETED: 'success',
   FAILED:   'danger',
   PENDING:  'warning',
   REFUNDED: 'neutral',
@@ -44,17 +48,21 @@ const PaymentsPage: React.FC = () => {
   const [provider, setProvider]     = useState('ALL');
   const [status, setStatus]         = useState('ALL');
   const [loading, setLoading]       = useState(true);
+  const [page,       setPage]        = useState(0);
+  const [totalPages, setTotalPages]  = useState(0);
 
   const fetchPayments = useCallback(async () => {
     try {
       const [sumRes, txRes] = await Promise.allSettled([
-        api.get<PaymentSummary>('/api/admin/payments/summary'),
-        api.get<Transaction[]>('/api/admin/payments/transactions'),
+        api.get<any>('/api/admin/dashboard/stats'),
+        api.get<any>('/api/payments/transactions/all'),
       ]);
       if (sumRes.status === 'fulfilled') setSummary(sumRes.value.data);
       if (txRes.status  === 'fulfilled') {
-        setTx(txRes.value.data);
-        setFiltered(txRes.value.data);
+        const list = Array.isArray(txRes.value.data) ? txRes.value.data : (txRes.value.data.content ?? []);
+        setTx(list);
+        setFiltered(list);
+        setTotalPages(txRes.value.data.totalPages ?? 0);
       }
     } catch {
       toast.error('Failed to load payment data.');
@@ -84,7 +92,7 @@ const PaymentsPage: React.FC = () => {
       sortable: true,
       render: t => (
         <span className="font-semibold">
-          {t.currency} {(t.amount / 100).toFixed(2)}
+          {t.currency} {Number(t.amount).toFixed(2)}
         </span>
       ),
     },
@@ -107,7 +115,7 @@ const PaymentsPage: React.FC = () => {
     {
       key: 'description',
       header: 'Description',
-      render: t => <span className="text-slate-500 text-xs">{t.description}</span>,
+      render: t => <span className="text-slate-500 text-xs">{t.description ?? t.username ?? '—'}</span>,
     },
     {
       key: 'date',
@@ -124,10 +132,10 @@ const PaymentsPage: React.FC = () => {
         {/* Summary stat cards */}
         {summary && (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard label="Total Revenue"    value={summary.totalRevenue / 100}    icon={<DollarSign size={20} />}  accent="blue" />
-            <StatCard label="M-Pesa Revenue"   value={summary.mpesaRevenue / 100}    icon={<Smartphone size={20} />}  accent="green" />
-            <StatCard label="Stripe Revenue"   value={summary.stripeRevenue / 100}   icon={<CreditCard size={20} />}  accent="navy" />
-            <StatCard label="Transactions"     value={summary.transactionCount}      icon={<CreditCard size={20} />}  accent="amber" />
+            <StatCard label="Total Revenue (KES)"    value={summary.totalRevenueKes}    icon={<DollarSign size={20} />}  accent="blue" />
+            <StatCard label="Total Organizers"   value={summary.totalOrganizers}    icon={<Smartphone size={20} />}  accent="green" />
+            <StatCard label="Total Events"   value={summary.totalEvents}   icon={<CreditCard size={20} />}  accent="navy" />
+            <StatCard label="Confirmed RSVPs"     value={summary.totalConfirmedRsvps}      icon={<CreditCard size={20} />}  accent="amber" />
           </div>
         )}
 
@@ -171,11 +179,14 @@ const PaymentsPage: React.FC = () => {
           {loading ? (
             <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
           ) : (
-            <Table
-              columns={columns}
-              data={filtered}
-              keyExtractor={t => t.id}
-            />
+            <>
+              <Table
+                columns={columns}
+                data={filtered}
+                keyExtractor={t => t.id}
+              />
+              <Pagination page={page} totalPages={totalPages} onPageChange={p => setPage(p)}/>
+            </>
           )}
         </Card>
       </div>

@@ -10,15 +10,21 @@ import com.turnout.eventservice.entity.AuditLog;
 import com.turnout.eventservice.entity.Event;
 import com.turnout.eventservice.repository.AuditLogRepository;
 import com.turnout.eventservice.repository.EventRepository;
+import com.turnout.eventservice.repository.EventSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,13 +73,46 @@ public class EventService {
         return toResponse(event);
     }
 
+    // No auth required — guest clicking an RSVP link in an email isn't logged in.
+    // Only safe public fields are exposed; no organizer info, stats, or audit data.
     @Transactional(readOnly = true)
-    public List<EventResponse> listEvents(UUID userId, String role) {
-        List<Event> events = isAdmin(role)
-                ? eventRepository.findAll()
-                : eventRepository.findByCreatedBy(userId);
+    public PublicEventResponse getPublicEvent(UUID eventId) {
+        Event event = findOrThrow(eventId);
+        return new PublicEventResponse(event.getTitle(), event.getEventDate(), event.getLocation());
+    }
 
-        return events.stream().map(this::toResponse).toList();
+    // No auth required — same anonymous guest flow as getPublicEvent.
+    // currentRsvpCount is already maintained by EventKafkaConsumer on every
+    // CONFIRMED rsvp.submitted event, so this is a live confirmed-guest count
+    // with no extra query or cross-service call needed.
+    @Transactional(readOnly = true)
+    public CapacityResponse getCapacity(UUID eventId) {
+        Event event = findOrThrow(eventId);
+        return new CapacityResponse(event.getCurrentRsvpCount(), event.getMaxCapacity());
+    }
+
+    @Transactional(readOnly = true)
+    public PagedEventResponse listEvents(
+            UUID userId, String role,
+            UUID organizerId, EventStatus status,
+            LocalDateTime dateFrom, LocalDateTime dateTo,
+            int page, int size) {
+
+        // EVENT_ORGANIZER always sees only their own events — organizerId param ignored
+        UUID effectiveOrganizerId = isAdmin(role) ? organizerId : userId;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "eventDate"));
+        Specification<Event> spec = EventSpecification.withFilters(
+                effectiveOrganizerId, status, dateFrom, dateTo);
+        Page<Event> result = eventRepository.findAll(spec, pageable);
+
+        return new PagedEventResponse(
+                result.getContent().stream().map(this::toResponse).toList(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.getNumber(),
+                result.getSize()
+        );
     }
 
     // ── Update ───────────────────────────────────────────────────────────────
@@ -111,7 +150,6 @@ public class EventService {
 
     @Transactional
     public EventResponse changeStatus(UUID eventId, ChangeStatusRequest request, UUID userId, String role) {
-        // Pessimistic lock — prevents two concurrent status changes racing each other
         Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", eventId));
 
@@ -140,8 +178,6 @@ public class EventService {
             return deserializeStats(cached);
         }
 
-        // Cache miss — fetch live counts from guest-service
-        // TODO: replace base URL with config property or service discovery
         EventStatsResponse stats = webClientBuilder.build()
                 .get()
                 .uri("http://guestservice:8083/api/guests/event/{eventId}/stats", eventId)
@@ -156,7 +192,7 @@ public class EventService {
         return stats;
     }
 
-    // ── Package-visible: called by Kafka consumer to bust cache ──────────────
+    // ── Package-visible: called by Kafka consumer ────────────────────────────
 
     public void incrementRsvpCount(UUID eventId) {
         eventRepository.findById(eventId).ifPresent(event -> {
@@ -182,14 +218,12 @@ public class EventService {
 
     private void assertCanModify(Event event, UUID userId, String role) {
         assertCanAccess(event, userId, role);
-
         EventStatus status = event.getStatus();
         if (status == EventStatus.COMPLETED || status == EventStatus.CANCELLED) {
             throw new IllegalStateException("Cannot modify a " + status + " event");
         }
     }
 
-    // Only valid transitions: DRAFT→ACTIVE, ACTIVE→COMPLETED, ACTIVE→CANCELLED
     private void assertValidTransition(EventStatus current, EventStatus next) {
         boolean valid = switch (current) {
             case DRAFT  -> next == EventStatus.ACTIVE;
@@ -202,8 +236,6 @@ public class EventService {
     }
 
     private void enforceTierLimit(UUID userId) {
-        // Calls payment-service to check if user has hit their plan's event limit
-        // Returns 402 if FREE tier has already created 5 events
         try {
             Map<?, ?> limits = webClientBuilder.build()
                     .get()
@@ -213,12 +245,10 @@ public class EventService {
                     .block();
 
             if (limits == null) return;
-
             Object maxEvents = limits.get("maxEvents");
             if (maxEvents == null) return;
-
             int max = Integer.parseInt(maxEvents.toString());
-            if (max == -1) return; // -1 means unlimited
+            if (max == -1) return;
 
             long current = eventRepository.countByCreatedBy(userId);
             if (current >= max) {
@@ -227,7 +257,6 @@ public class EventService {
         } catch (TierLimitExceededException e) {
             throw e;
         } catch (Exception e) {
-            // Payment service unavailable — fail open so events can still be created
             log.warn("Could not reach payment-service for tier check: {}", e.getMessage());
         }
     }
@@ -240,15 +269,16 @@ public class EventService {
         redisTemplate.delete(STATS_CACHE_KEY + eventId);
     }
 
-    private void writeAuditLog(UUID userId, String action, String entityType, UUID entityId, UUID eventId, Object details) {
-        AuditLog log = new AuditLog();
-        log.setEventId(eventId);
-        log.setUserId(userId);
-        log.setAction(action);
-        log.setEntityType(entityType);
-        log.setEntityId(entityId);
-        log.setDetails(serializeDetails(details));
-        auditLogRepository.save(log);
+    private void writeAuditLog(UUID userId, String action, String entityType,
+                                UUID entityId, UUID eventId, Object details) {
+        AuditLog auditLog = new AuditLog();
+        auditLog.setEventId(eventId);
+        auditLog.setUserId(userId);
+        auditLog.setAction(action);
+        auditLog.setEntityType(entityType);
+        auditLog.setEntityId(entityId);
+        auditLog.setDetails(serializeDetails(details));
+        auditLogRepository.save(auditLog);
     }
 
     private EventResponse toResponse(Event e) {

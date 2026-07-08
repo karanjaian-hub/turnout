@@ -19,7 +19,7 @@ public class RsvpController {
     // Public — no JWT. The guest token in the query param IS the auth.
     // The frontend calls this first to show event details before the form.
     @GetMapping("/validate")
-    public ResponseEntity<ValidateTokenResponse> validateToken(@RequestParam String token) {
+    public ResponseEntity<ValidateTokenResponse> validateToken(@RequestParam("token") String token) {
         return ResponseEntity.ok(rsvpService.validateToken(token));
     }
 

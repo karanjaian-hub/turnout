@@ -100,6 +100,22 @@ public class EmailDispatchService {
         emailLogRepository.save(emailLog);
     }
 
+    public void sendInvitationEmail(String recipientEmail, String recipientName,
+                                    java.util.UUID eventId, String guestId) {
+        String html = """
+                <h2>You're Invited!</h2>
+                <p>Hi %s,</p>
+                <p>You have been invited to an event on Turnout.</p>
+                <p>Click below to RSVP:</p>
+                <a href="https://app.turnout.com/events/%s/rsvp">RSVP Now</a>
+                """.formatted(recipientName, eventId);
+
+        BrevoEmailRequest request = buildRequest(recipientEmail, recipientName,
+                "You're invited to a Turnout event!", html);
+
+        dispatch(request, recipientEmail, recipientName, "INVITATION");
+    }
+
     private BrevoEmailRequest buildRequest(String recipientEmail, String recipientName,
                                            String subject, String htmlContent) {
         return BrevoEmailRequest.builder()

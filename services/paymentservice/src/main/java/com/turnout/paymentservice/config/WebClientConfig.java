@@ -4,11 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
-/**
- * Pre-configured WebClient instances per external API.
- * WHY separate beans: each API has a different base URL and auth scheme.
- * Injecting a named bean is cleaner than constructing WebClient inline in services.
- */
 @Configuration
 public class WebClientConfig {
 
@@ -30,6 +25,14 @@ public class WebClientConfig {
     public WebClient eventServiceWebClient() {
         return WebClient.builder()
                 .baseUrl("http://eventservice:8082")
+                .build();
+    }
+
+    // Needed by Gaps 2 & 3 — resolves userId -> username/email for admin responses
+    @Bean("authServiceWebClient")
+    public WebClient authServiceWebClient() {
+        return WebClient.builder()
+                .baseUrl("http://authservice:8081")
                 .build();
     }
 }
