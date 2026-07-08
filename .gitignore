@@ -26,3 +26,10 @@ Thumbs.db
 # Docker volumes (if mounted locally)
 postgres-data/
 redis-data/
+
+# Android build artifacts
+android/build/
+android/.gradle/
+android/.kotlin/
+android/app/build/
+android/local.properties
