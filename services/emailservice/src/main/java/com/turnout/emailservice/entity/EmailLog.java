@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "email_logs")
+@Table(name = "email_logs", schema = "email")
 @Data
 @Builder
 @NoArgsConstructor
