@@ -32,7 +32,7 @@ spring:
       routes:
         # /api/auth/me requires a valid JWT — must go through JwtAuthentication
         - id: auth-private
-          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/auth/me, /api/auth/logout
           filters:
@@ -40,18 +40,18 @@ spring:
 
         # Internal service-to-service endpoints — no JWT, never exposed to end users
         - id: auth-internal
-          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/internal/**
 
         # All other auth endpoints are public (login, register, refresh, otp etc.)
         - id: auth-public
-          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/auth/**
 
         - id: rsvp-public
-          uri: http://${RSVP_SERVICE_HOST:rsvpservice}:8085
+          uri: ${RSVP_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/rsvp/**
           filters:
@@ -62,59 +62,59 @@ spring:
                 key-resolver: "#{@ipKeyResolver}"
 
         - id: payments-webhooks-public
-          uri: http://${PAYMENT_SERVICE_HOST:paymentservice}:8087
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8087}
           predicates:
             - Path=/api/payments/mpesa/callback, /api/payments/stripe/webhook
 
         - id: websocket
-          uri: ws://${NOTIFICATION_SERVICE_HOST:notificationservice}:8086
+          uri: ${NOTIFICATION_SERVICE_WS_URL:ws://localhost:8086}
           predicates:
             - Path=/ws/**
 
         - id: events
-          uri: http://${EVENT_SERVICE_HOST:eventservice}:8082
+          uri: ${EVENT_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/events/**
           filters:
             - JwtAuthentication
 
         - id: guests
-          uri: http://${GUEST_SERVICE_HOST:guestservice}:8083
+          uri: ${GUEST_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/api/guests/**
           filters:
             - JwtAuthentication
 
         - id: emails
-          uri: http://${EMAIL_SERVICE_HOST:emailservice}:8084
+          uri: ${EMAIL_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/emails/**
           filters:
             - JwtAuthentication
 
         - id: auth-admin-endpoints
-          uri: http://${AUTH_SERVICE_HOST:authservice}:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/admin/users/**, /api/admin/create-admin
           filters:
             - JwtAuthentication
 
         - id: admin
-          uri: http://${NOTIFICATION_SERVICE_HOST:notificationservice}:8086
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/admin/**
           filters:
             - JwtAuthentication
 
         - id: payments
-          uri: http://${PAYMENT_SERVICE_HOST:paymentservice}:8087
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8087}
           predicates:
             - Path=/api/payments/**
           filters:
             - JwtAuthentication
 
         - id: ai
-          uri: http://${AI_SERVICE_HOST:aiservice}:8088
+          uri: ${AI_SERVICE_URL:http://localhost:8088}
           predicates:
             - Path=/api/ai/**
           filters:
@@ -158,7 +158,6 @@ spring:
           uri: http://localhost:8081
           predicates:
             - Path=/api/internal/**
-
 
         - id: auth-public
           uri: http://localhost:8081
