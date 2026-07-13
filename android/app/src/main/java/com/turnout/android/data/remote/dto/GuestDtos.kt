@@ -16,3 +16,11 @@ data class ImportResultDto(
 )
 
 data class ImportError(val row: Int, val reason: String)
+
+data class GuestStatsDto(
+    val totalCount: Int,
+    val confirmedCount: Int,
+    val pendingCount: Int,
+    val declinedCount: Int,
+    val waitlistedCount: Int
+)

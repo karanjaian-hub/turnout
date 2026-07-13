@@ -23,6 +23,7 @@ work                    = "2.9.0"
 core-splashscreen       = "1.0.1"
 material-components     = "1.12.0"
 window-sizeclass         = "1.2.1"
+browser                  = "1.8.0"
 accompanist             = "0.34.0"
 hilt-navigation-compose = "1.2.0"
 
@@ -89,6 +90,7 @@ work-runtime                  = { group = "androidx.work", name = "work-runtime-
 core-splashscreen             = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
 material-components           = { group = "com.google.android.material", name = "material", version.ref = "material-components" }
 window-sizeclass               = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "window-sizeclass" }
+browser                        = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 # Accompanist
 accompanist-permissions       = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }

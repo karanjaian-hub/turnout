@@ -23,9 +23,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found: " + username));
 
-// Map our UserRole enum to a Spring GrantedAuthority.
-// The "ROLE_" prefix is Spring Security's convention for
-// hasRole() checks — without it, hasRole("ADMIN") won't match.
         SimpleGrantedAuthority authority =
                 new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
 

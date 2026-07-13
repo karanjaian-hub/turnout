@@ -50,11 +50,48 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it.clear() }
     }
 
+    // Draft event storage, scoped per user — key is built dynamically since it embeds
+    // userId rather than being a single fixed constant like the other keys above.
+    fun getDraftEvent(userId: Long): Flow<String?> =
+        dataStore.data.map { it[stringPreferencesKey("draft_event_$userId")] }
+
+    suspend fun saveDraftEvent(userId: Long, json: String) {
+        dataStore.edit { it[stringPreferencesKey("draft_event_$userId")] = json }
+    }
+
+    suspend fun clearDraftEvent(userId: Long) {
+        dataStore.edit { it.remove(stringPreferencesKey("draft_event_$userId")) }
+    }
+
+    // AI result cache, scoped per feature (e.g. "description", "rsvp_insights") — value
+    // is a JSON blob of { result, timestamp }, deserialized by AiViewModel. Each feature
+    // caches independently so switching between them doesn't lose earlier results.
+    fun getAiResult(featureKey: String): Flow<String?> =
+        dataStore.data.map { it[stringPreferencesKey("ai_result_$featureKey")] }
+
+    suspend fun saveAiResult(featureKey: String, json: String) {
+        dataStore.edit { it[stringPreferencesKey("ai_result_$featureKey")] = json }
+    }
+
+    val mpesaPhoneNumber: Flow<String?> = dataStore.data.map { it[KEY_MPESA_PHONE] }
+
+    suspend fun saveMpesaPhoneNumber(phoneNumber: String) {
+        dataStore.edit { it[KEY_MPESA_PHONE] = phoneNumber }
+    }
+
+    val fcmToken: Flow<String?> = dataStore.data.map { it[KEY_FCM_TOKEN] }
+
+    suspend fun saveFcmToken(token: String) {
+        dataStore.edit { it[KEY_FCM_TOKEN] = token }
+    }
+
     companion object {
         private val KEY_USERNAME  = stringPreferencesKey("username")
         private val KEY_FULL_NAME = stringPreferencesKey("full_name")
         private val KEY_THEME     = stringPreferencesKey("theme")
         private val KEY_BIOMETRIC = booleanPreferencesKey("biometric_enabled")
         private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        private val KEY_MPESA_PHONE = stringPreferencesKey("mpesa_phone_number")
+        private val KEY_FCM_TOKEN = stringPreferencesKey("fcm_token")
     }
 }

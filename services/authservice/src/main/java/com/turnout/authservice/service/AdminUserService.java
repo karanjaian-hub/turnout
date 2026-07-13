@@ -50,7 +50,6 @@ public class AdminUserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Organizer", id));
 
-// Admins are not organizers — return 404 to avoid leaking admin accounts
         if (user.getRole() != UserRole.EVENT_ORGANIZER) {
             throw new ResourceNotFoundException("Organizer", id);
         }

@@ -111,14 +111,15 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET}
-      AUTHSERVICE_URL: http://authservice:8081
-      EVENTSERVICE_URL: http://eventservice:8082
-      GUESTSERVICE_URL: http://guestservice:8083
-      EMAILSERVICE_URL: http://emailservice:8084
-      RSVPSERVICE_URL: http://rsvpservice:8085
-      NOTIFICATIONSERVICE_URL: http://notificationservice:8086
-      PAYMENTSERVICE_URL: http://paymentservice:8087
-      AISERVICE_URL: http://aiservice:8088
+      AUTH_SERVICE_URL: http://authservice:8081
+      EVENT_SERVICE_URL: http://eventservice:8082
+      GUEST_SERVICE_URL: http://guestservice:8083
+      EMAIL_SERVICE_URL: http://emailservice:8084
+      RSVP_SERVICE_URL: http://rsvpservice:8085
+      NOTIFICATION_SERVICE_URL: http://notificationservice:8086
+      NOTIFICATION_SERVICE_WS_URL: ws://notificationservice:8086
+      PAYMENT_SERVICE_URL: http://paymentservice:8087
+      AI_SERVICE_URL: http://aiservice:8088
       JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       redis:

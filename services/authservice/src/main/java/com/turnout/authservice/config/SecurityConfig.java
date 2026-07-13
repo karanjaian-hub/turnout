@@ -10,7 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-// The auth service sits behind the API Gateway which handles all
+// The auth service sits behind the API Gateway which handles all.. Any request that reaches  here is already trusted for it passed though the gateway
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -21,7 +21,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-// authentication. Every request reaching here is already trusted — ,,,,permit all and let the gateway enforce access control.
+// authentication... Every request reaching here is already trusted — ,,,,permit all and let the gateway enforce access control.
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             );

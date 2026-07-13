@@ -36,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.turnout.android.core.components.*
 import com.turnout.android.core.theme.*
 import com.turnout.android.core.utils.LocalAdaptiveConfig
+import com.turnout.android.core.utils.deterministicColor
+import com.turnout.android.core.utils.deterministicGradient
 import com.turnout.android.core.utils.hapticClick
 import com.turnout.android.core.utils.TurnoutWindowSize
 import com.turnout.android.core.utils.WsState
@@ -405,19 +407,3 @@ private fun EventCard(event: Event, onClick: () -> Unit) {
     }
 }
 
-/** Deterministic avatar color from a name hash — same name always gets the same color. */
-private fun deterministicColor(seed: String): Color {
-    val hash = abs(seed.hashCode())
-    val hue = (hash % 360).toFloat()
-    return Color.hsv(hue, 0.55f, 0.75f)
-}
-
-/** Deterministic two-color gradient from an event ID hash — fixed saturation/lightness
- *  keeps every generated gradient on-brand regardless of which hue it lands on. */
-private fun deterministicGradient(seed: Long): Pair<Color, Color> {
-    val hash = abs(seed.hashCode())
-    val hue = (hash % 360).toFloat()
-    val colorA = Color.hsv(hue, 0.6f, 0.55f)
-    val colorB = Color.hsv((hue + 40f) % 360f, 0.6f, 0.7f)
-    return colorA to colorB
-}

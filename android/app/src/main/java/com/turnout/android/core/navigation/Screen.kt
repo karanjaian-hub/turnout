@@ -28,6 +28,11 @@ sealed class Screen(val route: String) {
     data object CreateEvent    : Screen("events/create")
     data object EventDetail    : Screen("events/{eventId}") {
         fun createRoute(eventId: Long) = "events/$eventId"
+        // Internal-only deep link for FCM notification taps — custom scheme rather than
+        // https:// like Rsvp's, since this never needs to work from outside the app
+        // (no App Links domain verification needed for a scheme only FCM PendingIntents use).
+        const val deepLinkUriPattern = "turnout://event/{eventId}"
+        fun deepLinkUri(eventId: Long) = "turnout://event/$eventId"
     }
     data object ImportCsv      : Screen("events/{eventId}/import") {
         fun createRoute(eventId: Long) = "events/$eventId/import"
@@ -36,7 +41,9 @@ sealed class Screen(val route: String) {
         fun createRoute(eventId: Long) = "events/$eventId/guests"
     }
 
-    data object Payments       : Screen("payments")
+    data object Payments       : Screen("payments") {
+        const val deepLinkUri = "turnout://payments"
+    }
     data object Upgrade        : Screen("upgrade")
     data object Onboarding     : Screen("onboarding")
 

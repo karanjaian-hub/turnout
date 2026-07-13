@@ -141,6 +141,7 @@ dependencies {
     implementation(libs.core.splashscreen)
     implementation(libs.material.components)
     implementation(libs.window.sizeclass)
+    implementation(libs.browser)
     implementation(libs.accompanist.permissions)
 
     testImplementation(libs.junit)

@@ -220,7 +220,6 @@ public class AuthService {
         );
     }
 
-// Logout
     public MessageResponse logout(String userId) {
         // Delete refresh token — prevents token rotation attacks.
         // Access token expires naturally (15 min). Full JTI blacklisting
@@ -229,7 +228,6 @@ public class AuthService {
         return new MessageResponse("Logged out successfully.", true);
     }
 
-    // Forgot password
     public MessageResponse forgotPassword(ForgotPasswordRequest request) {
 // Always return success — never reveal whether an email exists
         userRepository.findByEmail(request.email()).ifPresent(user -> {

@@ -230,29 +230,15 @@ private fun TurnoutNavHost(
         }
 
         composable(Screen.Events.route) {
-            if (adaptiveConfig.showTwoPaneLayout) {
-                // Expanded: list and detail live side by side, no navigation between them.
-                var selectedEventId by remember { androidx.compose.runtime.mutableStateOf<Long?>(null) }
-                TwoPaneLayout(
-                    listPane = {
-                        EventsListScreen(
-                            onNavigateToCreate = { navController.navigate(Screen.CreateEvent.route) },
-                            onNavigateToDetail = { id -> selectedEventId = id }
-                        )
-                    },
-                    detailPane = {
-                        selectedEventId?.let { id ->
-                            EventDetailScreen(eventId = id, onNavigateBack = { selectedEventId = null })
-                        }
-                    },
-                    showDetail = selectedEventId != null
-                )
-            } else {
-                EventsListScreen(
-                    onNavigateToCreate = { navController.navigate(Screen.CreateEvent.route) },
-                    onNavigateToDetail = { id -> navController.navigate(Screen.EventDetail.createRoute(id)) }
-                )
-            }
+            // EventsListScreen now owns its own Expanded two-pane branching internally
+            // (via EventsListViewModel's selectedEventId), so NavGraph just delegates
+            // once here instead of duplicating that branching logic itself.
+            EventsListScreen(
+                onNavigateToCreate = { navController.navigate(Screen.CreateEvent.route) },
+                onNavigateToDetail = { id -> navController.navigate(Screen.EventDetail.createRoute(id)) },
+                onNavigateToImport = { id -> navController.navigate(Screen.ImportCsv.createRoute(id)) },
+                adaptiveConfig = adaptiveConfig
+            )
         }
 
         composable(Screen.CreateEvent.route) {
@@ -261,10 +247,15 @@ private fun TurnoutNavHost(
 
         composable(
             route = Screen.EventDetail.route,
-            arguments = listOf(navArgument("eventId") { type = NavType.LongType })
+            arguments = listOf(navArgument("eventId") { type = NavType.LongType }),
+            deepLinks = listOf(navDeepLink { uriPattern = Screen.EventDetail.deepLinkUriPattern })
         ) { backStack ->
             val eventId = backStack.arguments?.getLong("eventId") ?: 0L
-            EventDetailScreen(eventId = eventId, onNavigateBack = { navController.popBackStack() })
+            EventDetailScreen(
+                eventId = eventId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToImport = { id -> navController.navigate(Screen.ImportCsv.createRoute(id)) }
+            )
         }
 
         composable(
@@ -284,7 +275,12 @@ private fun TurnoutNavHost(
         }
 
         composable(Screen.Ai.route) { AiScreen() }
-        composable(Screen.Payments.route) { PaymentsScreen() }
+        composable(
+            route = Screen.Payments.route,
+            deepLinks = listOf(navDeepLink { uriPattern = Screen.Payments.deepLinkUri })
+        ) {
+            PaymentsScreen(onNavigateToUpgrade = { navController.navigate(Screen.Upgrade.route) })
+        }
         composable(Screen.Upgrade.route) { UpgradeScreen() }
 
         composable(Screen.Settings.route) {

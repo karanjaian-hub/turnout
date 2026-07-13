@@ -1,7 +1,15 @@
 package com.turnout.android.data.remote.api
 
-// TODO(later phase): fill in real endpoints once emailservice's Android-facing
-// API surface is defined (likely just read-only email log viewing for admins).
-// Empty for now — exists so NetworkModule can provide it without a forward reference
-// to a type that doesn't exist yet.
-interface EmailApi
+import com.turnout.android.data.remote.dto.EmailLogDto
+import com.turnout.android.data.remote.dto.MessageResponse
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+
+interface EmailApi {
+    @GET("api/events/{id}/email-logs")
+    suspend fun getEmailLogs(@Path("id") eventId: Long): List<EmailLogDto>
+
+    @POST("api/events/{eventId}/email-logs/{logId}/retry")
+    suspend fun retryEmail(@Path("eventId") eventId: Long, @Path("logId") logId: Long): MessageResponse
+}

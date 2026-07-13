@@ -96,8 +96,8 @@ public class AuthController {
         ));
     }
 
-    // Stores the Android FCM push token in Redis so the notification service
-    // can look it up when sending push notifications to this user.
+// Stores the Android FCM push token in Redis so the notification service
+// can look it up when sending push notifications to this user.
     @PostMapping("/fcm-token")
     public ResponseEntity<MessageResponse> storeFcmToken(
             @RequestHeader("X-User-Id") String userId,
@@ -111,9 +111,9 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("FCM token stored.", true));
     }
 
-    // Internal endpoint — called by other services (payment-service etc.)
-    // via WebClient to resolve a userId to basic profile info.
-    // Never returns password or sensitive fields.
+// Internal endpoint,,  called by other services (payment-service... ect)
+// via WebClient to resolve a userId to basic profile info.
+
     @GetMapping("/users/{id}")
     public ResponseEntity<UserLookupResponse> lookupUser(@PathVariable UUID id) {
         User user = userRepository.findById(id)
