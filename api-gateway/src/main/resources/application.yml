@@ -21,12 +21,11 @@ spring:
       globalcors:
         cors-configurations:
           "[/**]":
-            allowedOrigins:
+            allowedOriginPatterns:
               - "http://localhost:3000"
               - "http://localhost:3001"
               - "https://turnout-frontend.vercel.app"
-              - "https://turnout-frontend-git-main-karanja-ia.vercel.app"
-              - "https://turnout-frontend-21w5vkcqm-karanja-ia.vercel.app"
+              - "https://turnout-frontend-*.vercel.app"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
