@@ -73,7 +73,7 @@ const SettingsPage: React.FC = () => {
   const checkHealth = useCallback(async () => {
     const results = await Promise.allSettled(
       SERVICES.map(svc =>
-        api.get('/api/admin/dashboard/system-health')
+        api.get('/api/admin/system-health')
           .then(() => ({ ...svc, status: 'UP' as const }))
           .catch(() => ({ ...svc, status: 'DOWN' as const }))
       )
