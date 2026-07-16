@@ -26,10 +26,11 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
+      properties:
+        fetch.max.bytes: 1048576
+        max.partition.fetch.bytes: 1048576
 server:
   port: 8084
-
 brevo:
   api:
     key: ${BREVO_API_KEY:your-brevo-api-key-here}
@@ -37,7 +38,6 @@ brevo:
   sender:
     email: ${BREVO_SENDER_EMAIL:no-reply@turnout.com}
     name: ${BREVO_SENDER_NAME:Turnout}
-
 management:
   endpoints:
     web:
@@ -46,7 +46,6 @@ management:
   endpoint:
     health:
       show-details: always
-
 logging:
   level:
     com.turnout.emailservice: DEBUG
