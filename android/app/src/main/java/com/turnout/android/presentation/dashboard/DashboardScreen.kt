@@ -53,6 +53,7 @@ fun DashboardScreen(
     onNavigateToEventDetail: (Long) -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+    com.turnout.android.core.components.ExitAppBackHandler()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val wsState by viewModel.wsState.collectAsStateWithLifecycle()
     val adaptiveConfig = LocalAdaptiveConfig.current

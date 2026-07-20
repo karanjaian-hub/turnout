@@ -1,7 +1,13 @@
 package com.turnout.android.presentation.auth
 
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.turnout.android.core.utils.TurnoutBiometricManager
+import com.turnout.android.data.local.TokenManager
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import com.turnout.android.core.utils.Result
 import com.turnout.android.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,7 +48,10 @@ class AuthViewModel @Inject constructor(
     private val verifyOtpUseCase: VerifyOtpUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val logoutUseCase: LogoutUseCase,
-    private val resendOtpUseCase: ResendOtpUseCase
+    private val resendOtpUseCase: ResendOtpUseCase,
+    private val refreshTokenUseCase: RefreshTokenUseCase,
+    private val biometricManager: TurnoutBiometricManager,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -51,6 +60,15 @@ class AuthViewModel @Inject constructor(
     // SharedFlow with replay=0: each event is consumed once — no duplicate navigations
     private val _events = MutableSharedFlow<AuthEvent>(replay = 0)
     val events = _events.asSharedFlow()
+
+    // Only meaningful if biometric is both enabled by the user AND there's actually a
+    // stored refresh token to unlock — enabling biometric with no session to fall back
+    // on would show a button that leads nowhere.
+    val showBiometricButton = biometricManager.isBiometricEnabled()
+        .combine(tokenManager.accessToken) { enabled, _ ->
+            enabled && tokenManager.getRefreshToken() != null
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun login(username: String, password: String) = viewModelScope.launch {
         _uiState.value = AuthUiState(isLoading = true)
@@ -119,6 +137,30 @@ class AuthViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    // Biometric never calls the login API — it just unlocks the refresh token already
+    // stored from a previous real login, then uses that to get a fresh access token.
+    fun biometricLogin(activity: FragmentActivity) {
+        biometricManager.authenticate(
+            activity = activity,
+            onSuccess = {
+                viewModelScope.launch {
+                    val refreshToken = tokenManager.getRefreshToken()
+                    if (refreshToken == null) {
+                        _events.emit(AuthEvent.ShowError("Session expired — please sign in again"))
+                        return@launch
+                    }
+                    when (refreshTokenUseCase(refreshToken)) {
+                        is Result.Success -> _events.emit(AuthEvent.NavigateToDashboard)
+                        is Result.Error -> _events.emit(AuthEvent.ShowError("Could not restore your session — please sign in again"))
+                    }
+                }
+            },
+            onError = { errorMessage ->
+                viewModelScope.launch { _events.emit(AuthEvent.ShowError(errorMessage)) }
+            }
+        )
     }
 
     // Ensures at least 600ms passes between starting an operation and reacting to its

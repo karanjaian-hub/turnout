@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.view.animation.AccelerateInterpolator
 import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -17,22 +18,36 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.LaunchedEffect
 import com.turnout.android.core.navigation.NavGraph
 import com.turnout.android.core.navigation.Screen
+import com.turnout.android.core.notifications.RequestNotificationPermission
 import com.turnout.android.TurnoutApp
 import com.turnout.android.presentation.AuthState
 import com.turnout.android.presentation.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+    // FragmentActivity, not ComponentActivity — androidx.biometric.BiometricPrompt
+    // specifically requires a FragmentActivity to attach its internal dialog fragment.
+    // FragmentActivity extends ComponentActivity, so this is a safe superset change —
+    // splash screen, Hilt, and setContent all still work identically.
 
     private val mainViewModel: MainViewModel by viewModels()
+
+    // Without this, Android's SplashScreen API dismisses the splash based on its own
+    // default heuristic (roughly "first frame drawn"), which with Compose can happen
+    // almost instantly — often before the real auth check (silent token refresh) even
+    // finishes. Holding it on this flag until AuthState actually resolves means the
+    // splash stays visible for as long as the real work takes, not just a guess.
+    private var keepSplashOnScreen = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // installSplashScreen() must be called BEFORE super.onCreate() —
         // it needs to intercept the window before any content is drawn.
         val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -48,6 +63,11 @@ class MainActivity : ComponentActivity() {
         setContent {
                         TurnoutApp { adaptiveConfig ->
                 val authState by mainViewModel.authState.collectAsStateWithLifecycle()
+                LaunchedEffect(authState) {
+                    if (authState !is AuthState.Loading) {
+                        keepSplashOnScreen = false
+                    }
+                }
                 Box(
                     modifier = Modifier.fillMaxSize().imePadding(),
                     contentAlignment = Alignment.Center
@@ -55,10 +75,16 @@ class MainActivity : ComponentActivity() {
                     when (authState) {
                         // Show spinner while checking stored tokens — avoids login flash
                         is AuthState.Loading -> CircularProgressIndicator()
-                        is AuthState.Authenticated -> NavGraph(
-                            startDestination = Screen.Dashboard.route,
-                            adaptiveConfig = adaptiveConfig
-                        )
+                        is AuthState.Authenticated -> {
+                            // Requested once per authenticated session start — the natural
+                            // point where push notifications actually become meaningful
+                            // (there's no reason to prompt before the user is even logged in).
+                            RequestNotificationPermission()
+                            NavGraph(
+                                startDestination = Screen.Dashboard.route,
+                                adaptiveConfig = adaptiveConfig
+                            )
+                        }
                         is AuthState.Unauthenticated -> NavGraph(
                             startDestination = Screen.Login.route,
                             adaptiveConfig = adaptiveConfig

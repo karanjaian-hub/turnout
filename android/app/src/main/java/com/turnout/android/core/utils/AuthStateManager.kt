@@ -10,6 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,12 +62,16 @@ class AuthStateManager @Inject constructor(
         }
 
         scope.launch {
-            when (val result = refreshTokenUseCase(refreshToken)) {
+            // 10s timeout — if the backend is slow/unreachable at app start, we don't
+            // want the user stuck on an indefinite spinner; treat a timeout the same
+            // as a failed refresh and fall through to the Login screen.
+            val result = withTimeoutOrNull(10_000) { refreshTokenUseCase(refreshToken) }
+            when (result) {
                 is Result.Success -> {
                     _isLoggedIn.value = true
                     loadCurrentUser()
                 }
-                is Result.Error -> {
+                is Result.Error, null -> {
                     // Refresh token is invalid/expired server-side — clear local state
                     // rather than leaving the app thinking it's logged in when it isn't.
                     tokenManager.clearTokens()

@@ -1,1 +1,1 @@
-Phase 4 complete — WebSocket manager, dashboard data layer, onboarding, and full dashboard screen.
+Fixed: splash screen now genuinely holds until auth check completes, instead of dismissing almost instantly.

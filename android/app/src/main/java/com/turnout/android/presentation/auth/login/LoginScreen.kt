@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -50,11 +51,9 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // TODO(Phase 10 - Biometric/Settings): wire to a real biometricEnabled preference
-    // once biometric enrollment exists. Always false for now — button correctly hidden
-    // until that infrastructure is built, rather than shown with no way to actually use it.
-    val biometricEnabled = false
-    val hasRefreshToken = false
+    val showBiometricButton by viewModel.showBiometricButton.collectAsStateWithLifecycle()
+    val localContext = LocalContext.current
+    val activity = localContext as? androidx.fragment.app.FragmentActivity
 
     val shakeOffset = remember { Animatable(0f) }
 
@@ -179,8 +178,8 @@ fun LoginScreen(
                     Text("Forgot password?", color = AccentBlue)
                 }
 
-                if (biometricEnabled && hasRefreshToken) {
-                    TextButton(onClick = { /* TODO(Phase 10): trigger biometric prompt */ }) {
+                if (showBiometricButton && activity != null) {
+                    TextButton(onClick = { viewModel.biometricLogin(activity) }) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.Fingerprint, contentDescription = null, tint = TextOnCanvasSecondary)
                             Text("Sign in with Fingerprint", color = TextOnCanvasSecondary)

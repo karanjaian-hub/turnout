@@ -41,6 +41,7 @@ private val featureMetas = listOf(
 
 @Composable
 fun AiScreen(viewModel: AiViewModel = hiltViewModel()) {
+    com.turnout.android.core.components.ExitAppBackHandler()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var expandedFeature by remember { mutableStateOf<AiFeature?>(null) }
 

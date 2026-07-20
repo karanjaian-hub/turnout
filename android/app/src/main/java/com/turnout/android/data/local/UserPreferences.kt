@@ -27,6 +27,7 @@ class UserPreferences @Inject constructor(
     val theme: Flow<String>    = dataStore.data.map { it[KEY_THEME] ?: "system" }
     val biometricEnabled: Flow<Boolean> = dataStore.data.map { it[KEY_BIOMETRIC] ?: false }
     val onboardingCompleted: Flow<Boolean> = dataStore.data.map { it[KEY_ONBOARDING_COMPLETED] ?: false }
+    val notificationsEnabled: Flow<Boolean> = dataStore.data.map { it[KEY_NOTIFICATIONS_ENABLED] ?: true }
 
     suspend fun saveUserProfile(username: String, fullName: String) {
         dataStore.edit {
@@ -44,6 +45,10 @@ class UserPreferences @Inject constructor(
     }
     suspend fun setOnboardingCompleted(completed: Boolean) {
         dataStore.edit { it[KEY_ONBOARDING_COMPLETED] = completed }
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { it[KEY_NOTIFICATIONS_ENABLED] = enabled }
     }
 
     suspend fun clear() {
@@ -91,6 +96,7 @@ class UserPreferences @Inject constructor(
         private val KEY_THEME     = stringPreferencesKey("theme")
         private val KEY_BIOMETRIC = booleanPreferencesKey("biometric_enabled")
         private val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val KEY_MPESA_PHONE = stringPreferencesKey("mpesa_phone_number")
         private val KEY_FCM_TOKEN = stringPreferencesKey("fcm_token")
     }

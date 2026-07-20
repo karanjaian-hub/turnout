@@ -83,14 +83,14 @@ class TurnoutFirebaseService : FirebaseMessagingService() {
         channelId: String,
         deepLinkUri: Uri?,
         type: String,
-        data: Map<String, String>
+        messageData: Map<String, String>
     ) {
         val notificationManager = getSystemService<NotificationManager>() ?: return
 
         val contentIntent = Intent(this, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            if (deepLinkUri != null) data = deepLinkUri
+            if (deepLinkUri != null) this.data = deepLinkUri
         }
 
         val notificationId = System.currentTimeMillis().toInt()

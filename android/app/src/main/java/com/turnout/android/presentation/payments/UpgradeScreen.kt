@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.turnout.android.core.components.PulseLine
+import com.turnout.android.core.components.SkeletonLoader
 import com.turnout.android.core.components.TurnoutButton
 import com.turnout.android.core.components.TurnoutCard
 import com.turnout.android.core.components.TurnoutTextField
@@ -58,8 +59,8 @@ fun UpgradeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(3) { SkeletonLoader(modifier = Modifier.fillMaxWidth().height(180.dp)) }
             }
         } else {
             LazyColumn(

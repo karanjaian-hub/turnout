@@ -57,6 +57,7 @@ fun EventsListScreen(
     adaptiveConfig: AdaptiveLayoutConfig,
     viewModel: EventsListViewModel = hiltViewModel()
 ) {
+    com.turnout.android.core.components.ExitAppBackHandler()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var searchActive by remember { mutableStateOf(false) }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface EmailLogRepository extends JpaRepository<EmailLog, Long> {
@@ -19,6 +20,9 @@ public interface EmailLogRepository extends JpaRepository<EmailLog, Long> {
     List<EmailLog> findByRecipientEmailOrderByAttemptedAtDesc(String email);
 
     List<EmailLog> findByStatus(String status);
+
+    Optional<EmailLog> findFirstByGuestIdAndEventIdAndEventTypeAndStatusOrderByAttemptedAtDesc(
+            String guestId, UUID eventId, String eventType, String status);
 
     @Query("SELECT e.status, COUNT(e) FROM EmailLog e WHERE e.eventId = :eventId GROUP BY e.status")
     List<Object[]> countByStatusForEvent(@Param("eventId") UUID eventId);

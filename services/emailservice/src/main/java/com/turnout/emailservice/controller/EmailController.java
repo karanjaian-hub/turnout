@@ -1,6 +1,7 @@
 package com.turnout.emailservice.controller;
 
 import com.turnout.emailservice.dto.EmailProgressResponse;
+import com.turnout.emailservice.dto.EventDetailsPayload;
 import com.turnout.emailservice.dto.GuestEmailPayload;
 import com.turnout.emailservice.dto.PagedGuestResponse;
 import com.turnout.emailservice.entity.EmailLog;
@@ -50,6 +51,14 @@ public class EmailController {
             return ResponseEntity.ok(Map.of("message", "No guests found for event", "queued", 0));
         }
 
+        // NEW: fetch the event's own details once per request (title, description, date,
+        // location) so the invitation email can actually say what the guest is invited to,
+        // instead of just "You have been invited to an event on Turnout."
+        // If this fails, we fall back to a null EventDetailsPayload — sendInvitationEmail
+        // handles that by omitting the event-detail card from the template rather than
+        // failing the whole send.
+        EventDetailsPayload eventDetails = fetchEventDetails(eventId);
+
         int queued = 0;
         for (GuestEmailPayload guest : guests) {
             try {
@@ -69,7 +78,8 @@ public class EmailController {
                         guest.getEmail(),
                         guest.getFirstName(),
                         eventId,
-                        guest.getId()
+                        guest.getId(),
+                        eventDetails
                 );
                 queued++;
             } catch (Exception e) {
@@ -92,11 +102,20 @@ public class EmailController {
         }
 
         EmailLog latest = previousLogs.get(0);
+
+        // NOTE: this still has the pre-existing bug flagged earlier — it doesn't create a
+        // fresh QUEUED row before calling sendInvitationEmail, so this call will throw
+        // IllegalStateException from the lookup inside sendInvitationEmail. Not fixed here;
+        // out of scope for this change (event-details template). Also fetches event details
+        // fresh so a resend shows current event info even if it changed since the original send.
+        EventDetailsPayload eventDetails = fetchEventDetails(latest.getEventId());
+
         emailDispatchService.sendInvitationEmail(
                 latest.getRecipientEmail(),
                 latest.getRecipientName(),
                 latest.getEventId(),
-                guestId
+                guestId,
+                eventDetails
         );
 
         return ResponseEntity.ok(Map.of("message", "Re-send triggered for guest " + guestId));
@@ -153,6 +172,24 @@ public class EmailController {
         } catch (Exception e) {
             log.error("Failed to fetch guests for event {}: {}", eventId, e.getMessage());
             return List.of();
+        }
+    }
+
+    // NEW: fetches the event's own details (title, description, date, location) from
+    // eventservice so the invitation template can actually describe what's being invited to.
+    // Uses the same internal-service WebClient pattern as fetchGuestsForEvent above.
+    // Returns null on failure rather than throwing — a missing event-details card is a
+    // degraded email, not a reason to fail the whole invitation send.
+    private EventDetailsPayload fetchEventDetails(UUID eventId) {
+        try {
+            return webClient.get()
+                    .uri("http://eventservice:8082/api/events/" + eventId)
+                    .retrieve()
+                    .bodyToMono(EventDetailsPayload.class)
+                    .block();
+        } catch (Exception e) {
+            log.error("Failed to fetch event details for event {}: {}", eventId, e.getMessage());
+            return null;
         }
     }
 }

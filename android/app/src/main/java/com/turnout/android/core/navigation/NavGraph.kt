@@ -287,7 +287,9 @@ private fun TurnoutNavHost(
             SettingsScreen(
                 onLogout = {
                     navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
-                }
+                },
+                onNavigateToChangePassword = { navController.navigate(Screen.ForgotPassword.route) },
+                onNavigateToPlanBilling = { navController.navigate(Screen.Payments.route) }
             )
         }
 

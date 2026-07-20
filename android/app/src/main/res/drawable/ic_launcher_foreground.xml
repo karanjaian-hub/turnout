@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Blue circle, sized within the adaptive icon's safe zone (~66dp of the 108dp
+         canvas) so it isn't clipped by circular/rounded-square launcher masks. -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M54,21 A33,33 0 1 1 53.99,21 Z" />
+    <!-- White "T" glyph, centered within the blue circle. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,40 L70,40 L70,47 L58,47 L58,72 L50,72 L50,47 L38,47 Z" />
+</vector>
