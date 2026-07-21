@@ -26,6 +26,8 @@ spring:
               - "http://localhost:3001"
               - "https://turnout-frontend.vercel.app"
               - "https://turnout-frontend-*.vercel.app"
+              - "https://turnout-nine.vercel.app"
+              - "https://turnout-*-karanja-ia.vercel.app"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
