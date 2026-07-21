@@ -11,8 +11,8 @@ public class WebClientConfig {
 
     private final BrevoProperties brevoProperties;
 
-    // Base URL is set once here. Every call in EmailDispatchService only needs
-    // to specify the path (e.g. "/smtp/email"), not the full URL.
+// Base URL is set once here. Every call in EmailDispatchService only needs
+// to specify the path (e.g. "/smtp/email"), not the full URL.
     @Bean
     public WebClient webClient() {
         return WebClient.builder()

@@ -43,8 +43,7 @@ public class EventService {
     private final ObjectMapper         objectMapper;
     private final WebClient.Builder    webClientBuilder;
 
-    // ── Create ───────────────────────────────────────────────────────────────
-
+// Create
     @Transactional
     public EventResponse createEvent(CreateEventRequest request, UUID userId, String role) {
         enforceTierLimit(userId);
@@ -64,8 +63,7 @@ public class EventService {
         return toResponse(saved);
     }
 
-    // ── Read ─────────────────────────────────────────────────────────────────
-
+// Read
     @Transactional(readOnly = true)
     public EventResponse getEvent(UUID eventId, UUID userId, String role) {
         Event event = findOrThrow(eventId);
@@ -73,18 +71,13 @@ public class EventService {
         return toResponse(event);
     }
 
-    // No auth required — guest clicking an RSVP link in an email isn't logged in.
-    // Only safe public fields are exposed; no organizer info, stats, or audit data.
+// No auth required — guest clicking an RSVP link in an email isn't logged in.
     @Transactional(readOnly = true)
     public PublicEventResponse getPublicEvent(UUID eventId) {
         Event event = findOrThrow(eventId);
         return new PublicEventResponse(event.getTitle(), event.getEventDate(), event.getLocation());
     }
 
-    // No auth required — same anonymous guest flow as getPublicEvent.
-    // currentRsvpCount is already maintained by EventKafkaConsumer on every
-    // CONFIRMED rsvp.submitted event, so this is a live confirmed-guest count
-    // with no extra query or cross-service call needed.
     @Transactional(readOnly = true)
     public CapacityResponse getCapacity(UUID eventId) {
         Event event = findOrThrow(eventId);

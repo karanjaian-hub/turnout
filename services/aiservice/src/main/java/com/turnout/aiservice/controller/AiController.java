@@ -59,10 +59,6 @@ public class AiController {
         return toResponse(aiService.predictCapacity(request));
     }
 
-    /**
-     * Null means Groq was down or JSON parsing failed.
-     * 503 = server is up, but a dependency it needs is not responding.
-     */
     private ResponseEntity<?> toResponse(Object result) {
         if (result == null) {
             return ResponseEntity.status(503)

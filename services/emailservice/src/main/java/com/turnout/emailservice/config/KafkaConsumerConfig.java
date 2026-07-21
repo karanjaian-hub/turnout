@@ -40,9 +40,9 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
 
-        // On failure: retry up to 3 times with a 2-second gap before sending to dead-letter.
-        // Without this, a bad message would cause the consumer to retry infinitely and block
-        // the entire partition.
+// On failure: retry up to 3 times with a 2-second gap before sending to dead-letter.
+// Without this, a bad message would cause the consumer to retry infinitely and block
+// the entire partition.
         factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(2000L, 3)));
 
         return factory;

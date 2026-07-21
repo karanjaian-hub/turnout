@@ -53,10 +53,7 @@ public class PaymentController {
     private final UpgradeRequestRepository     upgradeRequestRepo;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    // ------------------------------------------------------------------ //
-    //  M-Pesa                                                              //
-    // ------------------------------------------------------------------ //
-
+//  M-Pesa //
     @PostMapping("/upgrade/mpesa")
     public ResponseEntity<StkPushResponse> initiateMpesaUpgrade(
             @RequestHeader("X-User-Id") UUID userId,
@@ -82,10 +79,7 @@ public class PaymentController {
         return ResponseEntity.ok().build();
     }
 
-    // ------------------------------------------------------------------ //
-    //  Stripe                                                              //
-    // ------------------------------------------------------------------ //
-
+//  Stripe  //
     @PostMapping("/upgrade/stripe")
     public ResponseEntity<StripeSessionResponse> initiateStripeUpgrade(
             @RequestHeader("X-User-Id") UUID userId,
@@ -115,10 +109,7 @@ public class PaymentController {
         return ResponseEntity.ok().build();
     }
 
-    // ------------------------------------------------------------------ //
-    //  Subscription & Plans                                                //
-    // ------------------------------------------------------------------ //
-
+// Subscription & Plans //
     @GetMapping("/subscription/me")
     public ResponseEntity<UserSubscription> getMySubscription(
             @RequestHeader("X-User-Id") UUID userId) {
@@ -141,10 +132,7 @@ public class PaymentController {
         return ResponseEntity.ok(transactionRepo.findByUserId(userId));
     }
 
-    // ------------------------------------------------------------------ //
-    //  Enterprise Upgrade Requests                                         //
-    // ------------------------------------------------------------------ //
-
+//  Enterprise Upgrade Requests                                         //
     @PostMapping("/upgrade/enterprise")
     public ResponseEntity<UpgradeRequest> requestEnterpriseUpgrade(
             @RequestHeader("X-User-Id") UUID userId,
@@ -208,19 +196,13 @@ public class PaymentController {
         return ResponseEntity.ok(upgradeRequestRepo.save(request));
     }
 
-    // ------------------------------------------------------------------ //
-    //  Tier Check — internal, consumed by event-service                   //
-    // ------------------------------------------------------------------ //
-
+//  Tier Check — internal, consumed by event-service //
     @GetMapping("/tier-check/{userId}")
     public ResponseEntity<TierLimitsResponse> getTierLimits(@PathVariable UUID userId) {
         return ResponseEntity.ok(tierCheckService.getTierLimits(userId));
     }
 
-    // ------------------------------------------------------------------ //
-    //  Gap 2 — All transactions (ADMIN only, paginated, filterable)       //
-    // ------------------------------------------------------------------ //
-
+//  Gap 2 — All transactions (ADMIN only, paginated, filterable) //
     /**
      * Returns all payment transactions across all users — admin Payments page.
      * Optional filters: provider, status. Sorted by createdAt desc.
@@ -239,7 +221,7 @@ public class PaymentController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<PaymentTransaction> rawPage = transactionRepo.findAll(pageable);
 
-        // Filter in-memory after fetch — avoids a custom JPQL query for optional combos
+// Filter in-memory after fetch — avoids a custom JPQL query for optional combos
         List<PaymentTransaction> filtered = rawPage.getContent().stream()
                 .filter(tx -> provider == null || tx.getProvider() == provider)
                 .filter(tx -> status   == null || tx.getStatus()   == status)
@@ -266,15 +248,8 @@ public class PaymentController {
         return ResponseEntity.ok(new PageImpl<>(enriched, pageable, rawPage.getTotalElements()));
     }
 
-    // ------------------------------------------------------------------ //
-    //  Gap 3 — Pending enterprise upgrade requests (ADMIN only)           //
-    // ------------------------------------------------------------------ //
-
-    /**
-     * Returns upgrade requests filtered by status (PENDING by default).
-     * Each record enriched with username/email from auth-service.
-     */
-    @GetMapping("/upgrade/requests")
+// Gap 3 — Pending enterprise upgrade requests (ADMIN only) //
+   @GetMapping("/upgrade/requests")
     public ResponseEntity<Page<UpgradeRequestResponse>> getUpgradeRequests(
             @RequestHeader("X-User-Role") String role,
             @RequestParam(defaultValue = "PENDING") UpgradeRequestStatus status,
@@ -309,12 +284,11 @@ public class PaymentController {
                 new PageImpl<>(enriched.subList(start, end), pageable, enriched.size()));
     }
 
-    // ------------------------------------------------------------------ //
-    //  Gap 4 — Edit tier limits (SUPER_ADMIN only)                        //
-    // ------------------------------------------------------------------ //
 
+//  Edit tier limits (SUPER_ADMIN only) //
+// Allows SUPER_ADMIN to update plan limits from the Settings page.
     /**
-     * Allows SUPER_ADMIN to update plan limits from the Settings page.
+     *
      * Only non-null fields in the request body are applied — partial update.
      * Publishes 'turnout.plan.updated' so event-service and guest-service
      * can invalidate any cached tier-limit lookups.
@@ -338,7 +312,7 @@ public class PaymentController {
 
         SubscriptionPlan updated = planRepo.save(plan);
 
-        // Notify other services that cached limits need refreshing
+// Notify other services that cached limits need refreshing
         kafkaTemplate.send("turnout.plan.updated", updated.getId().toString(), Map.of(
                 "planId",           updated.getId().toString(),
                 "planName",         updated.getPlanName(),
@@ -351,10 +325,7 @@ public class PaymentController {
         return ResponseEntity.ok(updated);
     }
 
-    // ------------------------------------------------------------------ //
-    //  Private helpers                                                     //
-    // ------------------------------------------------------------------ //
-
+//  Private helpers //
     private void requireAdminRole(String role) {
         if (!"ADMIN".equals(role) && !"SUPER_ADMIN".equals(role)) {
             throw new UnauthorizedAccessException("Admin access required");

@@ -39,11 +39,11 @@ public class Event extends BaseEntity {
     @Column(name = "max_capacity", nullable = false)
     private int maxCapacity;
 
-    // Incremented by Kafka consumer on each confirmed RSVP — not set directly by API callers
+// Incremented by Kafka consumer on each confirmed RSVP — not set directly by API callers
     @Column(name = "current_rsvp_count", nullable = false)
     private int currentRsvpCount = 0;
 
-    // UUID of the user who created this event — logical FK only (no cross-schema constraint)
+// UUID of the user who created this event — logical FK only (no cross-schema constraint)
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 

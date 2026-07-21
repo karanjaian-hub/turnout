@@ -9,10 +9,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Mapped directly at /api/admin (not /api/admin/dashboard) so the final
- * path matches the spec exactly: /api/admin/system-health.
- */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor

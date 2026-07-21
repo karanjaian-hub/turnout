@@ -21,6 +21,7 @@ public interface EmailLogRepository extends JpaRepository<EmailLog, Long> {
 
     List<EmailLog> findByStatus(String status);
 
+    // Used by sendInvitationEmail to locate the QUEUED row EmailController pre-created
     Optional<EmailLog> findFirstByGuestIdAndEventIdAndEventTypeAndStatusOrderByAttemptedAtDesc(
             String guestId, UUID eventId, String eventType, String status);
 

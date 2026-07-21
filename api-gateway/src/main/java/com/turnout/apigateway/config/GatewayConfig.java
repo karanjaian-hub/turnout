@@ -17,10 +17,6 @@ import java.net.InetSocketAddress;
 
 @Configuration
 public class GatewayConfig {
-
-    // IpKeyResolver: extracts the caller's IP address for rate limiting.
-    // X-Forwarded-For is checked first because in Docker/behind a proxy,
-    // remoteAddress is the proxy IP, not the real client IP.
     @Bean
     public KeyResolver ipKeyResolver() {
         return exchange -> {
@@ -39,10 +35,6 @@ public class GatewayConfig {
         };
     }
 
-    // Reactive RedisTemplate for String keys and values.
-    // The JWT blacklist check in JwtAuthenticationFilter uses this.
-    // Must be reactive (not the blocking RedisTemplate) because WebFlux
-    // cannot block a Reactor thread — it would deadlock under load.
     @Primary
     @Bean
     public ReactiveRedisTemplate<String, String> reactiveRedisTemplate(

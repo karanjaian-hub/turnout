@@ -28,7 +28,6 @@ public class WebClientConfig {
                 .build();
     }
 
-    // Needed by Gaps 2 & 3 — resolves userId -> username/email for admin responses
     @Bean("authServiceWebClient")
     public WebClient authServiceWebClient() {
         return WebClient.builder()

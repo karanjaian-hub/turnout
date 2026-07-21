@@ -50,14 +50,14 @@ public class EventController {
                 page, size));
     }
 
-    // No auth headers required — public RSVP landing page for guests.
-    // Must be declared before /{id} so Spring doesn't try to parse "public" as a UUID.
+// No auth headers required,,coz,, public RSVP landing page for guests.
+// Must be declared before /{id} so Spring doesn't try to parse "public" as a UUID.
     @GetMapping("/{id}/public")
     public ResponseEntity<PublicEventResponse> getPublicEvent(@PathVariable UUID id) {
         return ResponseEntity.ok(eventService.getPublicEvent(id));
     }
 
-    // No auth headers required — same anonymous guest flow as /public.
+// No auth headers required — same anonymous guest flow as /public.
     @GetMapping("/{id}/capacity")
     public ResponseEntity<CapacityResponse> getCapacity(@PathVariable UUID id) {
         return ResponseEntity.ok(eventService.getCapacity(id));

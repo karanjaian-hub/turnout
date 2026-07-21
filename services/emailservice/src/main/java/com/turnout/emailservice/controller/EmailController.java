@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -31,6 +32,7 @@ public class EmailController {
     private final EmailLogRepository emailLogRepository;
     private final EmailDispatchService emailDispatchService;
     private final WebClient webClient;
+    private final JdbcTemplate jdbcTemplate;
 
     @PostMapping("/send-invitations")
     public ResponseEntity<Map<String, Object>> sendInvitations(@RequestBody Map<String, String> body) {
@@ -46,18 +48,12 @@ public class EmailController {
             return ResponseEntity.badRequest().body(Map.of("error", "eventId must be a valid UUID"));
         }
 
+        EventDetailsPayload eventDetails = fetchEventDetails(eventId);
         List<GuestEmailPayload> guests = fetchGuestsForEvent(eventId);
+
         if (guests.isEmpty()) {
             return ResponseEntity.ok(Map.of("message", "No guests found for event", "queued", 0));
         }
-
-        // NEW: fetch the event's own details once per request (title, description, date,
-        // location) so the invitation email can actually say what the guest is invited to,
-        // instead of just "You have been invited to an event on Turnout."
-        // If this fails, we fall back to a null EventDetailsPayload — sendInvitationEmail
-        // handles that by omitting the event-detail card from the template rather than
-        // failing the whole send.
-        EventDetailsPayload eventDetails = fetchEventDetails(eventId);
 
         int queued = 0;
         for (GuestEmailPayload guest : guests) {
@@ -67,7 +63,7 @@ public class EmailController {
                         .guestId(guest.getId())
                         .eventType("MANUAL_INVITATION")
                         .recipientEmail(guest.getEmail())
-                        .recipientName(guest.getFirstName() + " " + guest.getLastName())
+                        .recipientName(guest.getFullName())
                         .subject("You're invited!")
                         .status("QUEUED")
                         .attemptedAt(LocalDateTime.now())
@@ -103,11 +99,18 @@ public class EmailController {
 
         EmailLog latest = previousLogs.get(0);
 
-        // NOTE: this still has the pre-existing bug flagged earlier — it doesn't create a
-        // fresh QUEUED row before calling sendInvitationEmail, so this call will throw
-        // IllegalStateException from the lookup inside sendInvitationEmail. Not fixed here;
-        // out of scope for this change (event-details template). Also fetches event details
-        // fresh so a resend shows current event info even if it changed since the original send.
+        EmailLog resendLog = EmailLog.builder()
+                .eventId(latest.getEventId())
+                .guestId(guestId)
+                .eventType("MANUAL_INVITATION")
+                .recipientEmail(latest.getRecipientEmail())
+                .recipientName(latest.getRecipientName())
+                .subject(latest.getSubject())
+                .status("QUEUED")
+                .attemptedAt(LocalDateTime.now())
+                .build();
+        emailLogRepository.save(resendLog);
+
         EventDetailsPayload eventDetails = fetchEventDetails(latest.getEventId());
 
         emailDispatchService.sendInvitationEmail(
@@ -161,6 +164,27 @@ public class EmailController {
                 .build());
     }
 
+    private EventDetailsPayload fetchEventDetails(UUID eventId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id, title, description, location, event_date FROM events.events WHERE id = ?::uuid",
+                    (rs, rowNum) -> {
+                        EventDetailsPayload e = new EventDetailsPayload();
+                        e.setId(rs.getString("id"));
+                        e.setTitle(rs.getString("title"));
+                        e.setDescription(rs.getString("description"));
+                        e.setLocation(rs.getString("location"));
+                        e.setEventDate(rs.getTimestamp("event_date").toLocalDateTime());
+                        return e;
+                    },
+                    eventId.toString()
+            );
+        } catch (Exception e) {
+            log.warn("Could not fetch event details for {} from DB: {}", eventId, e.getMessage());
+            return null;
+        }
+    }
+
     private List<GuestEmailPayload> fetchGuestsForEvent(UUID eventId) {
         try {
             PagedGuestResponse guests = webClient.get()
@@ -172,24 +196,6 @@ public class EmailController {
         } catch (Exception e) {
             log.error("Failed to fetch guests for event {}: {}", eventId, e.getMessage());
             return List.of();
-        }
-    }
-
-    // NEW: fetches the event's own details (title, description, date, location) from
-    // eventservice so the invitation template can actually describe what's being invited to.
-    // Uses the same internal-service WebClient pattern as fetchGuestsForEvent above.
-    // Returns null on failure rather than throwing — a missing event-details card is a
-    // degraded email, not a reason to fail the whole invitation send.
-    private EventDetailsPayload fetchEventDetails(UUID eventId) {
-        try {
-            return webClient.get()
-                    .uri("http://eventservice:8082/api/events/" + eventId)
-                    .retrieve()
-                    .bodyToMono(EventDetailsPayload.class)
-                    .block();
-        } catch (Exception e) {
-            log.error("Failed to fetch event details for event {}: {}", eventId, e.getMessage());
-            return null;
         }
     }
 }

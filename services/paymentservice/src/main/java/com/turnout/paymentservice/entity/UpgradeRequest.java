@@ -6,11 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
 
-/**
- * Used ONLY for ENTERPRISE tier upgrades.
- * Enterprise pricing is custom — a user requests it, an admin approves or rejects.
- * FREE -> PRO upgrades skip this entirely and go through Stripe / M-Pesa directly.
- */
 @Entity
 @Table(schema = "payment", name = "upgrade_requests")
 @Getter

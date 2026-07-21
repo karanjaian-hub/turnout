@@ -14,7 +14,6 @@ import java.util.Map;
 
 // Internal endpoints,, called service-to-service only — never by the end users.
 //The gateway routes /api/internal/** without JWT validation.
-
 @Slf4j
 @RestController
 @RequestMapping("/api/internal")

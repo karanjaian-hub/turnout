@@ -9,7 +9,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "turnout.guest")
 public class GuestTokenProperties {
 
-    // How many days until the guest's RSVP link expires — from application.yml
     private int tokenExpiryDays = 30;
 
     // How many guests to batch-insert in one DB round trip

@@ -18,9 +18,9 @@ public class SecurityConfig {
             .cors(AbstractHttpConfigurer::disable)
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // JWT authentication is handled exclusively by the API Gateway.
+            // JWT authentication is handled by the API Gateway.
             // The gateway forwards X-User-Id and X-User-Role headers after validating
-            // the token — this service trusts those headers and permits all requests.
+            // this service trusts those headers and permits all requests.
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }

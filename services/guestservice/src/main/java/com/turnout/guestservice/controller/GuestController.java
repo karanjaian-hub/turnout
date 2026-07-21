@@ -29,8 +29,7 @@ public class GuestController {
     private final GuestService guestService;
     private final BulkImportService bulkImportService;
 
-    // ── Import & export ───────────────────────────────────────────────────────
-
+// Import & export
     /**
      * POST /api/guests/bulk-import?eventId=&organizerId=
      * Streams the CSV through Commons CSV — never held fully in memory.
@@ -52,7 +51,6 @@ public class GuestController {
         BulkImportResponse result = bulkImportService.importGuests(eventId, file, organizerId);
 
         // 207 Multi-Status — the request succeeded but individual rows may have failed
-        // More honest than 200 when failureCount > 0
         return ResponseEntity.status(207).body(result);
     }
 
@@ -83,8 +81,7 @@ public class GuestController {
                 .body(csv);
     }
 
-    // ── Queries ───────────────────────────────────────────────────────────────
-
+//  Queries
     /**
      * GET /api/guests/event/{eventId}?page=0&size=50&sort=fullName,asc
      * Paginated — never returns the full list in one shot.
@@ -119,8 +116,7 @@ public class GuestController {
         return ResponseEntity.ok(guestService.updateGuest(guestId, request));
     }
 
-    // ── Mutations ─────────────────────────────────────────────────────────────
-
+// Mutations
     /**
      * DELETE /api/guests/{guestId}
      * Only allowed if the guest hasn't submitted an RSVP yet.

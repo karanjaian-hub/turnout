@@ -28,11 +28,9 @@ public class AuditLog {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    // e.g. "CREATED_EVENT", "UPDATED_EVENT", "DELETED_EVENT", "CHANGED_STATUS"
     @Column(nullable = false)
     private String action;
 
-    // e.g. "Event"
     @Column(name = "entity_type", nullable = false)
     private String entityType;
 

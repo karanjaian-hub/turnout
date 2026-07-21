@@ -14,9 +14,6 @@ public class EventSpecification {
 
     private EventSpecification() {}
 
-    // Each non-null param adds one AND condition — null params are simply skipped.
-    // This avoids the Postgres "could not determine data type of parameter $N" error
-    // that occurs when passing typed nulls via JPQL.
     public static Specification<Event> withFilters(
             UUID organizerId,
             EventStatus status,

@@ -1,12 +1,9 @@
 FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app
-
-# Copy parent POM
+ POM
 COPY pom.xml .
 
-# Copy ALL module POMs so Maven can read the full reactor without errors
-# Only POMs here — src is copied later to keep this layer cached
 COPY shared/common-dto/pom.xml shared/common-dto/pom.xml
 COPY shared/common-exceptions/pom.xml shared/common-exceptions/pom.xml
 COPY services/authservice/pom.xml services/authservice/pom.xml
@@ -19,11 +16,9 @@ COPY services/paymentservice/pom.xml services/paymentservice/pom.xml
 COPY services/aiservice/pom.xml services/aiservice/pom.xml
 COPY api-gateway/pom.xml api-gateway/pom.xml
 
-# Copy shared module sources
 COPY shared/common-dto/src shared/common-dto/src
 COPY shared/common-exceptions/src shared/common-exceptions/src
 
-# Copy only the target service source
 ARG SERVICE_PATH=services/eventservice
 COPY ${SERVICE_PATH}/src ${SERVICE_PATH}/src
 

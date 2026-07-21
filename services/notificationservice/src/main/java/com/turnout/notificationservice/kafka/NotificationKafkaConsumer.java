@@ -47,7 +47,7 @@ public class NotificationKafkaConsumer {
         Map<Object, Object> raw = redisTemplate.opsForHash().entries(statsKey);
         DashboardStats stats = DashboardStats.fromMap(raw);
 
-        // RsvpStatus is an enum — use its name() for the switch in DashboardStats
+// RsvpStatus is an enum — use its name() for the switch in DashboardStats
         stats.increment(event.status().name());
 
         redisTemplate.opsForHash().putAll(statsKey, stats.toMap());
@@ -60,7 +60,7 @@ public class NotificationKafkaConsumer {
         redisTemplate.opsForList().leftPush(recentKey, event);
         redisTemplate.opsForList().trim(recentKey, 0, 19);
 
-        // Platform-wide feed — maintained separately for the no-eventId dashboard endpoint
+// Platform-wide feed — maintained separately for the no-eventId dashboard endpoint
         redisTemplate.opsForList().leftPush("recent-rsvps:platform", event);
         redisTemplate.opsForList().trim("recent-rsvps:platform", 0, 49);
     }
@@ -70,8 +70,8 @@ public class NotificationKafkaConsumer {
     public void handleEmailStatus(EmailStatusEvent event) {
         log.info("Email status update: log {} status {}", event.emailLogId(), event.status());
 
-        // EmailStatusEvent tracks per-email status, not aggregate progress.
-        // We broadcast the status change directly — aggregate progress comes via EmailProgressEvent.
+// EmailStatusEvent tracks per-email status, not aggregate progress.
+// We broadcast the status change directly — aggregate progress comes via EmailProgressEvent.
         messagingTemplate.convertAndSend(DEST_ADMIN_ALERTS,
                 Map.of("type", "EMAIL_STATUS",
                        "emailLogId", event.emailLogId(),

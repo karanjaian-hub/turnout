@@ -10,11 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Immutable audit record of every payment attempt.
- * WHY no BaseEntity: this is append-only — we never update a transaction record.
- * An updatedAt column on a payment would be misleading and legally problematic.
- */
+
 @Entity
 @Table(schema = "payment", name = "payment_transactions")
 @EntityListeners(AuditingEntityListener.class)
@@ -50,11 +46,10 @@ public class PaymentTransaction {
     @Builder.Default
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    // M-Pesa CheckoutRequestID or Stripe PaymentIntent ID
+ // M-Pesa CheckoutRequestID or Stripe PaymentIntent ID
     @Column(length = 200)
     private String providerReference;
 
-    // Raw JSON from M-Pesa / Stripe callback — kept as-is for audit trail
     @Column(columnDefinition = "TEXT")
     private String metadata;
 

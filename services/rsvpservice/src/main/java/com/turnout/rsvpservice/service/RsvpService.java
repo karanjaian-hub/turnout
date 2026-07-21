@@ -44,9 +44,7 @@ public class RsvpService {
 
     private static final String TOPIC_RSVP_SUBMITTED = "rsvp-submitted";
 
-    // ─────────────────────────────────────────────────────────────
     // PUBLIC API
-    // ─────────────────────────────────────────────────────────────
 
     public ValidateTokenResponse validateToken(String token) {
         Claims claims = decodeToken(token);
@@ -121,14 +119,11 @@ public class RsvpService {
             // ALWAYS release — even on exception. That's the point of finally.
             redisTemplate.delete(lockKey);
         }
-        // ─────────────────────────────────────────────────────────────
+
     }
 
-    // ─────────────────────────────────────────────────────────────
     // PRIVATE HELPERS
-    // ─────────────────────────────────────────────────────────────
-
-    private Claims decodeToken(String token) {
+     private Claims decodeToken(String token) {
         try {
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
             return Jwts.parser()
@@ -223,18 +218,13 @@ public class RsvpService {
         return "UNKNOWN";
     }
 
-    // ─────────────────────────────────────────────────────────────
     // INNER RECORDS
-    // ─────────────────────────────────────────────────────────────
-
     private record EventDetails(String title, LocalDateTime eventDate, String location) {}
     private record EventCapacity(int currentConfirmed, int maxCapacity) {}
 
-    // ─────────────────────────────────────────────────────────────
-    // INLINE EXCEPTIONS
-    // ─────────────────────────────────────────────────────────────
 
-    public static class InvalidTokenException extends RuntimeException {
+    // INLINE EXCEPTIONS
+       public static class InvalidTokenException extends RuntimeException {
         public InvalidTokenException(String message) { super(message); }
     }
 

@@ -18,14 +18,13 @@ public class EventServiceClient {
                 .build();
     }
 
-    // Fetches just the event date — used to calculate guest token expiry
+// Fetches just the event date — used to calculate guest token expiry
     public LocalDateTime getEventDate(UUID eventId) {
         return webClient.get()
                 .uri("/api/events/{id}/date", eventId)
                 .retrieve()
                 .bodyToMono(LocalDateTime.class)
                 // If event-service is down, fall back to 30 days from now
-                // so import doesn't fail entirely over a date fetch
                 .onErrorReturn(LocalDateTime.now().plusDays(30))
                 .block();
     }

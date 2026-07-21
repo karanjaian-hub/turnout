@@ -113,7 +113,6 @@ public class AuthController {
 
 // Internal endpoint,,  called by other services (payment-service... ect)
 // via WebClient to resolve a userId to basic profile info.
-
     @GetMapping("/users/{id}")
     public ResponseEntity<UserLookupResponse> lookupUser(@PathVariable UUID id) {
         User user = userRepository.findById(id)

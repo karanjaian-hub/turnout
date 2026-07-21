@@ -19,7 +19,7 @@ public class SystemHealthService {
 
     private final WebClient.Builder webClientBuilder;
 
-    // All 9 service names and their internal Docker hostnames + actuator port
+// All 9 services
     private static final List<Map.Entry<String, String>> SERVICES = List.of(
             Map.entry("api-gateway",           "http://api-gateway:8080"),
             Map.entry("auth-service",          "http://authservice:8081"),
@@ -29,7 +29,7 @@ public class SystemHealthService {
             Map.entry("rsvp-service",          "http://rsvpservice:8085"),
             Map.entry("payment-service",       "http://paymentservice:8087"),
             Map.entry("ai-service",            "http://aiservice:8088")
-            // notification-service (self) handled below without a network call
+// notification-service (self) handled below without a network call
     );
 
     private static final Duration HEALTH_CHECK_TIMEOUT = Duration.ofSeconds(2);
@@ -73,12 +73,12 @@ public class SystemHealthService {
                 .toBodilessEntity()
                 .timeout(HEALTH_CHECK_TIMEOUT)
                 .doOnSuccess(response -> {
-                    // Any 2xx means the service is reachable and healthy
+// Any 2xx means the service is reachable and healthy
                     statuses.put(name, "UP");
                     log.debug("{} health check: UP", name);
                 })
                 .onErrorResume(ex -> {
-                    // Timeout, connection refused, non-2xx — all map to DOWN
+// Timeout, connection refused, non-2xx — all map to DOWN
                     statuses.put(name, "DOWN");
                     log.warn("{} health check failed: {}", name, ex.getMessage());
                     return Mono.empty();

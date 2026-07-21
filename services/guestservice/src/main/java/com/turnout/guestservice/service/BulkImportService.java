@@ -46,8 +46,7 @@ public class BulkImportService {
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
-    // ── Public API ────────────────────────────────────────────────────────────
-
+// Public API
     @Transactional
     public BulkImportResponse importGuests(UUID eventId, MultipartFile csvFile, UUID organizerId) {
         List<FailedGuestRecord> failedRows = new ArrayList<>();
@@ -96,8 +95,6 @@ public class BulkImportService {
 
                 emailsSeen.add(normalizedEmail);
 
-                // Token is built with a placeholder — guest doesn't have a DB id yet.
-                // We patch it in right after the batch flush, once Hibernate assigns real ids.
                 Guest guest = new Guest(eventId, fullName.trim(), normalizedEmail, "PENDING-" + UUID.randomUUID());
                 currentBatch.add(guest);
                 successCount++;
@@ -156,8 +153,7 @@ public class BulkImportService {
         return out.toByteArray();
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
-
+// Private helpers
     private String validate(String fullName, String email) {
         if (fullName == null || fullName.isBlank()) {
             return "Missing full_name";
@@ -171,10 +167,6 @@ public class BulkImportService {
         return null;
     }
 
-    // Saves the batch first so Hibernate assigns real DB ids, then builds each
-    // guest's real JWT token (which embeds that id) and updates the row.
-    // Two round trips per batch instead of one, but this sidesteps every
-    // Hibernate persist/merge ambiguity around manually-assigned UUIDs.
     private void flushBatchWithTokens(List<Guest> batch, UUID eventId, LocalDateTime eventDate) {
         guestRepository.saveAll(batch);
         guestRepository.flush();

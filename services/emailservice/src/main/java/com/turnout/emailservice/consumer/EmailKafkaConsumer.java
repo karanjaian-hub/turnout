@@ -28,9 +28,9 @@ public class EmailKafkaConsumer {
                     event.getVerificationToken()
             );
         } catch (Exception e) {
-            // Rethrow so KafkaConsumerConfig's DefaultErrorHandler can apply retry + backoff.
-            // If we swallow the exception here, Kafka thinks the message was processed
-            // successfully and will never retry it.
+// Rethrow so KafkaConsumerConfig's DefaultErrorHandler can apply retry + backoff.
+// If we swallow the exception here, Kafka thinks the message was processed
+// successfully and will never retry it.
             log.error("Failed to process user.registered event: {}", e.getMessage());
             throw new RuntimeException("Failed to process user.registered event", e);
         }
