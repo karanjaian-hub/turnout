@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
+import android.os.SystemClock
+import kotlinx.coroutines.delay
 import com.turnout.android.core.navigation.NavGraph
 import com.turnout.android.core.navigation.Screen
 import com.turnout.android.core.notifications.RequestNotificationPermission
@@ -43,6 +45,12 @@ class MainActivity : FragmentActivity() {
     // splash stays visible for as long as the real work takes, not just a guess.
     private var keepSplashOnScreen = true
 
+    // Captured at process start — on a fresh install, AuthStateManager's silent-refresh
+    // check has no stored token to check at all, so it resolves in a few milliseconds
+    // with no real network wait. Without a minimum, the splash would then dismiss almost
+    // instantly on first launch, which reads as "no splash at all."
+    private val launchStartTime = SystemClock.elapsedRealtime()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // installSplashScreen() must be called BEFORE super.onCreate() —
         // it needs to intercept the window before any content is drawn.
@@ -65,6 +73,11 @@ class MainActivity : FragmentActivity() {
                 val authState by mainViewModel.authState.collectAsStateWithLifecycle()
                 LaunchedEffect(authState) {
                     if (authState !is AuthState.Loading) {
+                        val elapsed = SystemClock.elapsedRealtime() - launchStartTime
+                        val minimumSplashMs = 800L
+                        if (elapsed < minimumSplashMs) {
+                            delay(minimumSplashMs - elapsed)
+                        }
                         keepSplashOnScreen = false
                     }
                 }

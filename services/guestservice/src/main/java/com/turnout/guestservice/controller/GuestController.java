@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.Valid;
 import com.turnout.guestservice.dto.UpdateGuestRequest;
+import com.turnout.guestservice.dto.RsvpUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -121,6 +122,14 @@ public class GuestController {
      * DELETE /api/guests/{guestId}
      * Only allowed if the guest hasn't submitted an RSVP yet.
      */
+    @PatchMapping("/{guestId}/rsvp")
+    public ResponseEntity<GuestResponse> updateRsvp(
+            @PathVariable UUID guestId,
+            @RequestBody @Valid RsvpUpdateRequest request
+    ) {
+        return ResponseEntity.ok(guestService.updateRsvp(guestId, request));
+    }
+
     @DeleteMapping("/{guestId}")
     public ResponseEntity<Void> deleteGuest(@PathVariable UUID guestId) {
         guestService.deleteGuest(guestId);

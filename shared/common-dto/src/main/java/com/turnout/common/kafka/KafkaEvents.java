@@ -14,7 +14,7 @@ public final class KafkaEvents {
 
     private KafkaEvents() {}
 
-    // ── Topic constants ──────────────────────────────────────────────────────
+// Topic constants
     public static final String GUEST_IMPORTED        = "guest.imported";
     public static final String EMAIL_SEND            = "email.send";
     public static final String EMAIL_STATUS          = "email.status";
@@ -25,7 +25,7 @@ public final class KafkaEvents {
     public static final String PAYMENT_FAILED        = "payment.failed";
     public static final String AI_INSIGHT_READY      = "ai.insight.ready";
 
-    // ── Event records ────────────────────────────────────────────────────────
+// Event records
 
     public record GuestImportedEvent(
             UUID eventId,

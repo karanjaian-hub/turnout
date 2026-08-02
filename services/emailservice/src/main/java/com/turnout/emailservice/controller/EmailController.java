@@ -70,11 +70,13 @@ public class EmailController {
                         .build();
                 emailLogRepository.save(queuedLog);
 
+                String guestToken = fetchGuestToken(guest.getId());
                 emailDispatchService.sendInvitationEmail(
                         guest.getEmail(),
                         guest.getFirstName(),
                         eventId,
                         guest.getId(),
+                        guestToken,
                         eventDetails
                 );
                 queued++;
@@ -113,11 +115,13 @@ public class EmailController {
 
         EventDetailsPayload eventDetails = fetchEventDetails(latest.getEventId());
 
+        String guestToken = fetchGuestToken(guestId);
         emailDispatchService.sendInvitationEmail(
                 latest.getRecipientEmail(),
                 latest.getRecipientName(),
                 latest.getEventId(),
                 guestId,
+                guestToken,
                 eventDetails
         );
 
@@ -181,6 +185,19 @@ public class EmailController {
             );
         } catch (Exception e) {
             log.warn("Could not fetch event details for {} from DB: {}", eventId, e.getMessage());
+            return null;
+        }
+    }
+
+    private String fetchGuestToken(String guestId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT token FROM guests.guests WHERE id = ?::uuid",
+                    String.class,
+                    guestId
+            );
+        } catch (Exception e) {
+            log.warn("Could not fetch token for guest {}: {}", guestId, e.getMessage());
             return null;
         }
     }

@@ -25,10 +25,11 @@ public class GatewayConfig {
                     .getFirst("X-Forwarded-For");
 
             if (forwardedFor != null && !forwardedFor.isBlank()) {
-                // X-Forwarded-For can be a comma-separated chain — take the first (original client)
+// X-Forwarded-For can be a comma-separated chain — take the first (original client)
                 return Mono.just(forwardedFor.split(",")[0].trim());
             }
 
+// helps in getting the ip address stamped onto the packet from the sender
             return Mono.justOrEmpty(exchange.getRequest().getRemoteAddress())
                     .map(InetSocketAddress::getHostString)
                     .defaultIfEmpty("unknown");

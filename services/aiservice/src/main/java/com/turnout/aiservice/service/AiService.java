@@ -101,10 +101,7 @@ public class AiService {
         return parseOrNull(raw, CapacityForecastResponse.class);
     }
 
-    // ---------------------------------------------------------------------------
-    // Private helpers
-    // ---------------------------------------------------------------------------
-
+// Private helpers
     /**
      * Check Redis → on hit return cached value → on miss call Groq → cache result.
      * Cache key: ai:{featureName}:{SHA-256 of userMessage}

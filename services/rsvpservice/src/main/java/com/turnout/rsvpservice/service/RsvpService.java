@@ -30,7 +30,7 @@ public class RsvpService {
 
     private final StringRedisTemplate redisTemplate;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    // RestTemplate is in spring-web — no extra dependency needed
+// RestTemplate is in spring-web — no extra dependency needed
     private final RestTemplate restTemplate;
 
     @Value("${turnout.jwt.secret}")
@@ -44,8 +44,7 @@ public class RsvpService {
 
     private static final String TOPIC_RSVP_SUBMITTED = "rsvp-submitted";
 
-    // PUBLIC API
-
+// PUBLIC API
     public ValidateTokenResponse validateToken(String token) {
         Claims claims = decodeToken(token);
 
@@ -88,7 +87,7 @@ public class RsvpService {
         UUID guestId = tokenData.guestId();
         String lockKey = "rsvp:lock:" + eventId;
 
-        // ─── CRITICAL CONCURRENCY SECTION ─────────────────────────────
+//CRITICAL CONCURRENCY SECTION
         Boolean lockAcquired = redisTemplate.opsForValue()
                 .setIfAbsent(lockKey, "1", lockTtlSeconds, TimeUnit.SECONDS);
 
@@ -116,13 +115,12 @@ public class RsvpService {
                     tokenData.eventLocation(), tokenData.eventDate());
 
         } finally {
-            // ALWAYS release — even on exception. That's the point of finally.
             redisTemplate.delete(lockKey);
         }
 
     }
 
-    // PRIVATE HELPERS
+// PRIVATE HELPERS
      private Claims decodeToken(String token) {
         try {
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -151,12 +149,39 @@ public class RsvpService {
     }
 
     private void persistRsvp(UUID guestId, String status) {
-        // TODO: Inject GuestRepository and update:
-        //   guest.setRsvpStatus(RsvpStatus.valueOf(status));
-        //   guest.setTokenUsed(true);
-        //   guest.setRsvpDate(LocalDateTime.now());
-        //   guestRepository.save(guest);
-        log.debug("Persisting RSVP for guest={} status={}", guestId, status);
+        // Call guest-service over HTTP — rsvpservice never owns the guests table directly.
+        // PATCH is correct here: we're partially updating an existing guest record.
+        String url = "http://guestservice:8083/api/guests/{guestId}/rsvp";
+
+        Map<String, Object> body = Map.of(
+                "rsvpStatus", status,
+                "tokenUsed", true
+        );
+
+        try {
+            org.springframework.http.ResponseEntity<Void> response = restTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.PATCH,
+                    new org.springframework.http.HttpEntity<>(body),
+                    Void.class,
+                    guestId
+            );
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                // Non-2xx means guest-service rejected the update — abort the whole RSVP.
+                // GlobalExceptionHandler will catch this and return it to the caller.
+                throw new TurnoutException(
+                        "Guest service rejected RSVP update for guest: " + guestId);
+            }
+
+            log.debug("Persisted RSVP via guest-service: guest={} status={}", guestId, status);
+
+        } catch (TurnoutException e) {
+            throw e; // rethrow — don't wrap our own exception
+        } catch (Exception e) {
+            log.error("Failed to persist RSVP for guest={}: {}", guestId, e.getMessage());
+            throw new TurnoutException("Could not update RSVP — guest service unavailable.");
+        }
     }
 
     private void publishRsvpSubmittedEvent(UUID guestId, UUID eventId,
@@ -230,6 +255,10 @@ public class RsvpService {
 
     public static class LockNotAcquiredException extends RuntimeException {
         public LockNotAcquiredException(String message) { super(message); }
+    }
+
+    public static class TurnoutException extends RuntimeException {
+        public TurnoutException(String message) { super(message); }
     }
 
     public static class ResourceNotFoundException extends RuntimeException {

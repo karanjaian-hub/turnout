@@ -3,6 +3,7 @@ package com.turnout.guestservice.service;
 import com.turnout.common.enums.RsvpStatus;
 import com.turnout.guestservice.dto.EventGuestStatsResponse;
 import com.turnout.guestservice.dto.GuestResponse;
+import com.turnout.guestservice.dto.RsvpUpdateRequest;
 import com.turnout.guestservice.dto.UpdateGuestRequest;
 import com.turnout.guestservice.entity.Guest;
 import com.turnout.guestservice.exception.GuestNotFoundException;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -47,6 +49,18 @@ public class GuestService {
                 confirmed + declined + pending + maybe + waitlisted,
                 confirmed, declined, pending, maybe, waitlisted
         );
+    }
+
+    @Transactional
+    public GuestResponse updateRsvp(UUID guestId, RsvpUpdateRequest request) {
+        Guest guest = guestRepository.findById(guestId)
+                .orElseThrow(() -> new GuestNotFoundException(guestId));
+
+        guest.setRsvpStatus(request.rsvpStatus());
+        guest.setTokenUsed(request.tokenUsed());
+        guest.setRsvpDate(LocalDateTime.now());
+
+        return guestMapper.toResponse(guestRepository.save(guest));
     }
 
     @Transactional

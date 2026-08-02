@@ -21,7 +21,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-// authentication... Every request reaching here is already trusted — ,,,,permit all and let the gateway enforce access control.
+// Every request reaching here is already trusted,,, permit all and let the gateway enforce access control.
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             );

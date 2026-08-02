@@ -18,11 +18,13 @@ import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
@@ -37,6 +39,11 @@ public class MpesaService {
     private static final String TRANSACTION_TYPE = "CustomerPayBillOnline";
     private static final DateTimeFormatter TIMESTAMP_FMT =
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    // Safaricom's Timestamp/Password must reflect Kenyan local time (EAT, UTC+3).
+    // Containers default to UTC unless configured otherwise, so this must be
+    // explicit rather than relying on the JVM's default zone.
+    private static final ZoneId NAIROBI = ZoneId.of("Africa/Nairobi");
 
     private final MpesaProperties               mpesaProps;
     private final StringRedisTemplate           redisTemplate;
@@ -86,12 +93,19 @@ public class MpesaService {
                         .getBytes(StandardCharsets.UTF_8)
         );
 
-        Map<?, ?> response = mpesaWebClient.get()
-                .uri("/oauth/v1/generate?grant_type=client_credentials")
-                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+        Map<?, ?> response;
+        try {
+            response = mpesaWebClient.get()
+                    .uri("/oauth/v1/generate?grant_type=client_credentials")
+                    .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.error("Safaricom OAuth token request failed [{}]: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw e;
+        }
 
         String token = (String) response.get("access_token");
         redisTemplate.opsForValue().set(MPESA_TOKEN_KEY, token, Duration.ofSeconds(3500));
@@ -110,7 +124,8 @@ public class MpesaService {
                                        UUID userId,
                                        UUID planId) {
 
-        String timestamp = LocalDateTime.now().format(TIMESTAMP_FMT);
+        // Must be Nairobi local time — see NAIROBI constant above.
+        String timestamp = LocalDateTime.now(NAIROBI).format(TIMESTAMP_FMT);
 
         // Password = Base64(shortcode + passkey + timestamp) — Safaricom's spec
         String rawPassword = mpesaProps.getShortcode() + mpesaProps.getPasskey() + timestamp;
@@ -130,14 +145,22 @@ public class MpesaService {
         body.put("AccountReference",  accountRef);
         body.put("TransactionDesc",   "Turnout subscription payment");
 
-        Map<?, ?> response = mpesaWebClient.post()
-                .uri("/mpesa/stkpush/v1/processrequest")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+        Map<?, ?> response;
+        try {
+            response = mpesaWebClient.post()
+                    .uri("/mpesa/stkpush/v1/processrequest")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.error("Safaricom STK push failed [{}]: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException(
+                    "M-Pesa payment failed: " + e.getResponseBodyAsString());
+        }
 
         String checkoutRequestId = (String) response.get("CheckoutRequestID");
 

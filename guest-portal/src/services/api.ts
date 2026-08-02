@@ -5,9 +5,10 @@ const api = axios.create({
 });
 
 export interface RsvpDetails {
+  valid: boolean;
   guestId: string;
   guestName: string;
-  guestEmail: string;
+  guestEmail?: string;
   eventId: string;
   eventTitle: string;
   eventDate: string;
@@ -16,7 +17,8 @@ export interface RsvpDetails {
   organizerName?: string;
   maxCapacity?: number;
   currentRsvpCount?: number;
-  status: string; // PENDING, CONFIRMED, DECLINED
+  alreadyResponded: boolean;
+  currentRsvpStatus: string | null;
 }
 
 export const validateToken = async (token: string): Promise<RsvpDetails> => {
@@ -28,5 +30,5 @@ export const submitResponse = async (
   token: string,
   response: 'CONFIRMED' | 'DECLINED'
 ): Promise<void> => {
-  await api.post('/api/rsvp/respond', { token, response });
+  await api.post('/api/rsvp/submit', { token, rsvpStatus: response });
 };

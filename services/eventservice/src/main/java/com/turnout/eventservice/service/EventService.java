@@ -108,8 +108,7 @@ public class EventService {
         );
     }
 
-    // ── Update ───────────────────────────────────────────────────────────────
-
+// Update
     @Transactional
     public EventResponse updateEvent(UUID eventId, UpdateEventRequest request, UUID userId, String role) {
         Event event = findOrThrow(eventId);
@@ -127,8 +126,7 @@ public class EventService {
         return toResponse(saved);
     }
 
-    // ── Delete ───────────────────────────────────────────────────────────────
-
+// Delete
     @Transactional
     public void deleteEvent(UUID eventId, UUID userId, String role) {
         Event event = findOrThrow(eventId);
@@ -139,8 +137,7 @@ public class EventService {
         evictStatsCache(eventId);
     }
 
-    // ── Status change ────────────────────────────────────────────────────────
-
+ //Status change
     @Transactional
     public EventResponse changeStatus(UUID eventId, ChangeStatusRequest request, UUID userId, String role) {
         Event event = eventRepository.findByIdForUpdate(eventId)

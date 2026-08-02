@@ -19,8 +19,9 @@ const RsvpPage: React.FC = () => {
 
     validateToken(token)
       .then(data => {
-        if (data.status === 'CONFIRMED') { navigate('/rsvp/confirmed', { replace: true }); return; }
-        if (data.status === 'DECLINED')  { navigate('/rsvp/declined',  { replace: true }); return; }
+        if (data.alreadyResponded && data.currentRsvpStatus === 'CONFIRMED') { navigate('/rsvp/confirmed', { replace: true }); return; }
+        if (data.alreadyResponded && data.currentRsvpStatus === 'DECLINED')  { navigate('/rsvp/declined',  { replace: true }); return; }
+        if (data.alreadyResponded) { navigate('/rsvp/confirmed', { replace: true }); return; }
         setDetails(data);
       })
       .catch(err => {

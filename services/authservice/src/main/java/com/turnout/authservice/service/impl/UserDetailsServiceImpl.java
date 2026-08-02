@@ -1,4 +1,4 @@
-package com.turnout.authservice.security;
+package com.turnout.authservice.service.impl;
 
 import com.turnout.authservice.entity.User;
 import com.turnout.authservice.repository.UserRepository;

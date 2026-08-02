@@ -8,8 +8,7 @@ volumes:
 
 services:
 
-  # ── Infrastructure ──────────────────────────────────────────────────────────
-
+# Infrastructure
   postgres:
     image: postgres:15-alpine
     container_name: turnout_postgres
@@ -88,8 +87,7 @@ services:
     networks:
       - turnout-network
 
-  # ── Application Services ────────────────────────────────────────────────────
-
+# ── Application Services ────────────────────────────────────────────────────
   api-gateway:
     build:
       context: .
@@ -388,6 +386,9 @@ services:
       MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET}
       MPESA_PASSKEY: ${MPESA_PASSKEY}
       MPESA_SHORTCODE: ${MPESA_SHORTCODE}
+      MPESA_ENV: ${MPESA_ENV}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       JAVA_OPTS: "-Xmx128m -Xms64m"
     depends_on:
       postgres:

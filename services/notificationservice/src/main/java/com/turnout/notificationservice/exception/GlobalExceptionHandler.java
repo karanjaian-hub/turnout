@@ -1,4 +1,4 @@
-package com.turnout.authservice.exception;
+package com.turnout.notificationservice.exception;
 
 import com.turnout.common.dto.ApiResponse;
 import com.turnout.common.exception.*;
@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -53,12 +52,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<?>> handleBadCredentials(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
     @ExceptionHandler(TurnoutException.class)
     public ResponseEntity<ApiResponse<?>> handleTurnout(TurnoutException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -88,4 +81,3 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("An unexpected error occurred"));
     }
 }
-

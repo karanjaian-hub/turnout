@@ -1,6 +1,5 @@
 package com.turnout.apigateway.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.turnout.common.enums.UserRole;
 import com.turnout.common.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +63,7 @@ class JwtAuthenticationGatewayFilterFactoryTest {
         chain         = mock(GatewayFilterChain.class);
 
         filterFactory = new JwtAuthenticationGatewayFilterFactory(
-            redisTemplate, jwtUtil, new ObjectMapper()
+            redisTemplate, jwtUtil
         );
 
         // Chain just returns empty Mono — simulates downstream passing through

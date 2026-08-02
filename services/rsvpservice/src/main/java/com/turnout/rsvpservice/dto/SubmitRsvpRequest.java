@@ -8,5 +8,5 @@ public record SubmitRsvpRequest(
         String token,
 
         @NotNull(message = "RSVP status is required")
-        String rsvpStatus   // CONFIRMED / DECLINED / MAYBE
+        String rsvpStatus   // CONFIRMED/DECLINED/MAYBE
 ) {}

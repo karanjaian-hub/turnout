@@ -80,22 +80,23 @@ public class EmailDispatchService {
     }
 
     public void sendInvitationEmail(String recipientEmail, String recipientName,
-                                    UUID eventId, String guestId, EventDetailsPayload eventDetails) {
+                                    UUID eventId, String guestId, String guestToken,
+                                    EventDetailsPayload eventDetails) {
         EmailLog emailLog = emailLogRepository
                 .findFirstByGuestIdAndEventIdAndEventTypeAndStatusOrderByAttemptedAtDesc(
                         guestId, eventId, "MANUAL_INVITATION", "QUEUED")
                 .orElseThrow(() -> new IllegalStateException(
                         "No QUEUED EmailLog found for guestId=" + guestId + ", eventId=" + eventId));
 
-        String html = buildInvitationHtml(recipientName, eventId, eventDetails);
+        String html = buildInvitationHtml(recipientName, eventId, guestToken, eventDetails);
         BrevoEmailRequest request = buildRequest(recipientEmail, recipientName,
                 "You're invited to a Turnout event!", html);
 
         dispatch(request, emailLog, "MANUAL_INVITATION");
     }
 
-    private String buildInvitationHtml(String recipientName, UUID eventId, EventDetailsPayload eventDetails) {
-        String rsvpUrl = "https://turnout-git-main-karanja-ia.vercel.app/rsvp?token=" + guestId;
+    private String buildInvitationHtml(String recipientName, UUID eventId, String guestToken, EventDetailsPayload eventDetails) {
+        String rsvpUrl = "https://turnout-git-main-karanja-ia.vercel.app/rsvp?token=" + (guestToken != null ? guestToken : "unknown");
 
         String eventCardHtml;
         if (eventDetails != null) {

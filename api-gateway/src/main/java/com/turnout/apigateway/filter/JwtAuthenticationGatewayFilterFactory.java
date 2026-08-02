@@ -1,7 +1,5 @@
 package com.turnout.apigateway.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.turnout.common.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -16,25 +14,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-import java.util.Map;
-
 @Component
 public class JwtAuthenticationGatewayFilterFactory
         extends AbstractGatewayFilterFactory<JwtAuthenticationGatewayFilterFactory.Config> {
 
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     private final JwtUtil jwtUtil;
-    private final ObjectMapper objectMapper;
 
     @Autowired
     public JwtAuthenticationGatewayFilterFactory(ReactiveRedisTemplate<String, String> redisTemplate,
-                                   JwtUtil jwtUtil,
-                                   ObjectMapper objectMapper) {
+                                                 JwtUtil jwtUtil) {
         super(Config.class);
         this.redisTemplate = redisTemplate;
         this.jwtUtil = jwtUtil;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -62,11 +54,9 @@ public class JwtAuthenticationGatewayFilterFactory
                     .flatMap(isBlacklisted -> {
                         if (Boolean.TRUE.equals(isBlacklisted)) {
                             return writeErrorResponse(exchange, HttpStatus.UNAUTHORIZED,
-                                    "Invalid or expired token");
+                                    "Token has been revoked");
                         }
 
-                        // extractUserId() returns UUID, extractRole() returns UserRole enum
-                        // — both need toString()/name() to become header-safe strings
                         ServerHttpRequest mutatedRequest = exchange.getRequest()
                                 .mutate()
                                 .header("X-User-Id", jwtUtil.extractUserId(token).toString())
@@ -80,6 +70,8 @@ public class JwtAuthenticationGatewayFilterFactory
         };
     }
 
+    // Writes errors as ApiResponse envelope JSON — no ObjectMapper bean needed,
+    // these are fixed-structure strings so simple interpolation is sufficient
     private Mono<Void> writeErrorResponse(ServerWebExchange exchange,
                                           HttpStatus status,
                                           String message) {
@@ -87,19 +79,10 @@ public class JwtAuthenticationGatewayFilterFactory
         response.setStatusCode(status);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        Map<String, Object> body = Map.of(
-                "timestamp", LocalDateTime.now().toString(),
-                "status", status.value(),
-                "error", message,
-                "path", exchange.getRequest().getPath().value()
-        );
+        String body = String.format(
+                "{\"status\":\"error\",\"message\":\"%s\",\"data\":null}", message);
 
-        byte[] bytes;
-        try {
-            bytes = objectMapper.writeValueAsBytes(body);
-        } catch (JsonProcessingException e) {
-            bytes = "{\"error\":\"Unauthorized\"}".getBytes();
-        }
+        byte[] bytes = body.getBytes();
 
         return response.writeWith(
                 Mono.just(response.bufferFactory().wrap(bytes))

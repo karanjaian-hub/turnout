@@ -131,7 +131,7 @@ public class AuthService {
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", request.userId()));
 
-    // Reset attempts and issue a fresh code
+// Reset attempts and issue a fresh code
         redisTemplate.delete(KEY_OTP + request.userId());
         redisTemplate.delete(KEY_OTP_ATTEMPTS + request.userId());
 
