@@ -80,7 +80,7 @@ public class JwtAuthenticationGatewayFilterFactory
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
         String body = String.format(
-                "{\"status\":\"error\",\"message\":\"%s\",\"data\":null}", message);
+                "{\"status\":0,\"message\":\"%s\",\"data\":null}", message);
 
         byte[] bytes = body.getBytes();
 

@@ -1,8 +1,8 @@
 package com.turnout.notificationservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.turnout.common.dto.ApiResponse;
 import com.turnout.notificationservice.dto.PlatformStatsResponse;
-import com.turnout.notificationservice.dto.SystemHealthResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -31,40 +31,41 @@ public class DashboardController {
     private static final String ROLE_SUPER_ADMIN   = "SUPER_ADMIN";
 
     @GetMapping("/stats/{eventId}")
-    public ResponseEntity<Map<Object, Object>> getStats(
+    public ResponseEntity<ApiResponse<Map<Object, Object>>> getStats(
             @PathVariable UUID eventId,
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String userRole) {
 
         Map<Object, Object> stats = redisTemplate.opsForHash()
                 .entries("dashboard:stats:%s".formatted(eventId));
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(ApiResponse.success("Event stats retrieved.", stats));
     }
 
     @GetMapping("/email-progress/{eventId}")
-    public ResponseEntity<Map<Object, Object>> getEmailProgress(
+    public ResponseEntity<ApiResponse<Map<Object, Object>>> getEmailProgress(
             @PathVariable UUID eventId,
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String userRole) {
 
         Map<Object, Object> progress = redisTemplate.opsForHash()
                 .entries("email:progress:%s".formatted(eventId));
-        return ResponseEntity.ok(progress);
+        return ResponseEntity.ok(ApiResponse.success("Email progress retrieved.", progress));
     }
 
     @GetMapping("/recent-rsvps/{eventId}")
-    public ResponseEntity<List<Object>> getRecentRsvps(
+    public ResponseEntity<ApiResponse<List<Object>>> getRecentRsvps(
             @PathVariable UUID eventId,
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String userRole) {
 
         List<Object> recent = redisTemplate.opsForList()
                 .range("recent-rsvps:%s".formatted(eventId), 0, 19);
-        return ResponseEntity.ok(recent != null ? recent : List.of());
+        return ResponseEntity.ok(ApiResponse.success("Recent RSVPs retrieved.",
+                recent != null ? recent : List.of()));
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<PlatformStatsResponse> getPlatformStats(
+    public ResponseEntity<ApiResponse<PlatformStatsResponse>> getPlatformStats(
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String userRole) {
 
@@ -72,23 +73,25 @@ public class DashboardController {
 
         Object cached = redisTemplate.opsForValue().get(PLATFORM_STATS_KEY);
         if (cached != null) {
-            return ResponseEntity.ok(convertCached(cached, PlatformStatsResponse.class));
+            return ResponseEntity.ok(ApiResponse.success("Dashboard stats retrieved.",
+                    convertCached(cached, PlatformStatsResponse.class)));
         }
 
         PlatformStatsResponse stats = computePlatformStats();
         redisTemplate.opsForValue().set(PLATFORM_STATS_KEY, stats, PLATFORM_STATS_TTL, TimeUnit.SECONDS);
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok(ApiResponse.success("Dashboard stats retrieved.", stats));
     }
 
     @GetMapping("/recent-rsvps")
-    public ResponseEntity<List<Object>> getPlatformRecentRsvps(
+    public ResponseEntity<ApiResponse<List<Object>>> getPlatformRecentRsvps(
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String userRole) {
 
         requireAdminRole(userRole);
         List<Object> recent = redisTemplate.opsForList()
                 .range("recent-rsvps:platform", 0, 49);
-        return ResponseEntity.ok(recent != null ? recent : List.of());
+        return ResponseEntity.ok(ApiResponse.success("Recent activity retrieved.",
+                recent != null ? recent : List.of()));
     }
 
     private void requireAdminRole(String userRole) {
@@ -115,10 +118,13 @@ public class DashboardController {
                     .timeout(Duration.ofSeconds(3))
                     .block();
             if (response != null) {
-                if (response.containsKey("totalElements")) {
-                    totalEvents = ((Number) response.get("totalElements")).longValue();
+                // Event service now returns ApiResponse envelope — unwrap data first
+                Object dataObj = response.get("data");
+                Map<?, ?> data = dataObj instanceof Map<?, ?> m ? m : response;
+                if (data.containsKey("totalElements")) {
+                    totalEvents = ((Number) data.get("totalElements")).longValue();
                 }
-                Object contentObj = response.get("content");
+                Object contentObj = data.get("content");
                 if (contentObj instanceof List<?> contentList) {
                     activeEventsCount = contentList.stream()
                             .filter(item -> item instanceof Map<?,?> m

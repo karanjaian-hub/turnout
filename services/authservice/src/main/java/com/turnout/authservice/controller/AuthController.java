@@ -5,8 +5,8 @@ import com.turnout.authservice.entity.User;
 import com.turnout.authservice.repository.UserRepository;
 import com.turnout.authservice.service.AdminUserService;
 import com.turnout.authservice.service.AuthService;
+import com.turnout.common.dto.ApiResponse;
 import com.turnout.common.exception.ResourceNotFoundException;
-import com.turnout.common.exception.UnauthorizedAccessException;
 import com.turnout.common.security.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,63 +29,73 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    private static final long FCM_TTL_SECONDS = 2_592_000L; // 30 days
+    private static final long FCM_TTL_SECONDS = 2_592_000L;
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(
+    public ResponseEntity<ApiResponse<RegisterResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(authService.register(request));
+                .body(ApiResponse.success(
+                        "Registration successful. Check your email for OTP.",
+                        authService.register(request)));
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<MessageResponse> verifyOtp(
+    public ResponseEntity<ApiResponse<MessageResponse>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {
-        return ResponseEntity.ok(authService.verifyOtp(request));
+        return ResponseEntity.ok(
+                ApiResponse.success("Email verified successfully.", authService.verifyOtp(request)));
     }
 
     @PostMapping("/resend-otp")
-    public ResponseEntity<MessageResponse> resendOtp(
+    public ResponseEntity<ApiResponse<Void>> resendOtp(
             @Valid @RequestBody ResendOtpRequest request) {
-        return ResponseEntity.ok(authService.resendOtp(request));
+        authService.resendOtp(request);
+        return ResponseEntity.ok(ApiResponse.success("OTP resent to your email."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+        return ResponseEntity.ok(
+                ApiResponse.success("Login successful.", authService.login(request)));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
             @Valid @RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(authService.refresh(request));
+        return ResponseEntity.ok(
+                ApiResponse.success("Token refreshed.", authService.refresh(request)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<MessageResponse> logout(
+    public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader("X-User-Id") String userId) {
-        return ResponseEntity.ok(authService.logout(userId));
+        authService.logout(userId);
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully."));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<MessageResponse> forgotPassword(
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
-        return ResponseEntity.ok(authService.forgotPassword(request));
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(
+                ApiResponse.success("If this email exists, a reset link has been sent."));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<MessageResponse> resetPassword(
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
-        return ResponseEntity.ok(authService.resetPassword(request));
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully."));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> me(
+    public ResponseEntity<ApiResponse<UserResponse>> me(
             @RequestHeader("X-User-Id") String userId) {
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
-        return ResponseEntity.ok(new UserResponse(
+        return ResponseEntity.ok(ApiResponse.success("User profile retrieved.", new UserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
@@ -93,13 +103,11 @@ public class AuthController {
                 user.getRole().name(),
                 user.getStatus().name(),
                 user.isEmailVerified()
-        ));
+        )));
     }
 
-// Stores the Android FCM push token in Redis so the notification service
-// can look it up when sending push notifications to this user.
     @PostMapping("/fcm-token")
-    public ResponseEntity<MessageResponse> storeFcmToken(
+    public ResponseEntity<ApiResponse<Void>> storeFcmToken(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody FcmTokenRequest request) {
         redisTemplate.opsForValue().set(
@@ -108,22 +116,18 @@ public class AuthController {
                 FCM_TTL_SECONDS,
                 TimeUnit.SECONDS
         );
-        return ResponseEntity.ok(new MessageResponse("FCM token stored.", true));
+        return ResponseEntity.ok(ApiResponse.success("FCM token saved."));
     }
 
-// Internal endpoint,,  called by other services (payment-service... ect)
-// via WebClient to resolve a userId to basic profile info.
     @GetMapping("/users/{id}")
-    public ResponseEntity<UserLookupResponse> lookupUser(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<UserLookupResponse>> lookupUser(@PathVariable UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
-        return ResponseEntity.ok(new UserLookupResponse(
+        return ResponseEntity.ok(ApiResponse.success("User found.", new UserLookupResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName()
-        ));
+        )));
     }
-
-
 }

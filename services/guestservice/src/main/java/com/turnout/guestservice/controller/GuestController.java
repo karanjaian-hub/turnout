@@ -1,15 +1,16 @@
 package com.turnout.guestservice.controller;
 
+import com.turnout.common.dto.ApiResponse;
 import com.turnout.guestservice.dto.BulkImportResponse;
 import com.turnout.guestservice.dto.EventGuestStatsResponse;
 import com.turnout.guestservice.dto.GuestResponse;
+import com.turnout.guestservice.dto.RsvpUpdateRequest;
+import com.turnout.guestservice.dto.UpdateGuestRequest;
 import com.turnout.guestservice.service.BulkImportService;
 import com.turnout.guestservice.service.GuestService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import jakarta.validation.Valid;
-import com.turnout.guestservice.dto.UpdateGuestRequest;
-import com.turnout.guestservice.dto.RsvpUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -30,35 +31,28 @@ public class GuestController {
     private final GuestService guestService;
     private final BulkImportService bulkImportService;
 
-// Import & export
-    /**
-     * POST /api/guests/bulk-import?eventId=&organizerId=
-     * Streams the CSV through Commons CSV — never held fully in memory.
-     * Returns detailed results including every failed row with its reason.
-     */
+    // ── Import ────────────────────────────────────────────────────────────────
+
     @PostMapping(value = "/bulk-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BulkImportResponse> bulkImport(
+    public ResponseEntity<ApiResponse<BulkImportResponse>> bulkImport(
             @RequestParam UUID eventId,
             @RequestParam UUID organizerId,
             @RequestPart("file") MultipartFile file
     ) {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Uploaded file is empty"));
         }
 
         log.info("Bulk import started — event: {}, organizer: {}, file: {} ({} bytes)",
                 eventId, organizerId, file.getOriginalFilename(), file.getSize());
 
         BulkImportResponse result = bulkImportService.importGuests(eventId, file, organizerId);
-
-        // 207 Multi-Status — the request succeeded but individual rows may have failed
-        return ResponseEntity.status(207).body(result);
+        return ResponseEntity.status(201)
+                .body(ApiResponse.success("Guests imported successfully.", result));
     }
 
-    /**
-     * GET /api/guests/sample-csv
-     * Returns a downloadable CSV template so organizers know the expected columns.
-     */
+    // File download — NOT wrapped in ApiResponse (raw bytes with Content-Disposition)
     @GetMapping("/sample-template")
     public ResponseEntity<byte[]> downloadSampleCsv() {
         byte[] csv = bulkImportService.generateSampleCsv();
@@ -68,10 +62,7 @@ public class GuestController {
                 .body(csv);
     }
 
-    /**
-     * GET /api/guests/event/{eventId}/export
-     * Exports all guests for an event as a CSV download.
-     */
+    // File download — NOT wrapped in ApiResponse (raw bytes with Content-Disposition)
     @GetMapping("/event/{eventId}/export")
     public ResponseEntity<byte[]> exportGuests(@PathVariable UUID eventId) {
         byte[] csv = bulkImportService.exportGuestsCsv(eventId);
@@ -82,57 +73,58 @@ public class GuestController {
                 .body(csv);
     }
 
-//  Queries
-    /**
-     * GET /api/guests/event/{eventId}?page=0&size=50&sort=fullName,asc
-     * Paginated — never returns the full list in one shot.
-     */
+    // ── Queries ───────────────────────────────────────────────────────────────
+
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<Page<GuestResponse>> listGuests(
+    public ResponseEntity<ApiResponse<Page<GuestResponse>>> listGuests(
             @PathVariable UUID eventId,
             @PageableDefault(size = 50, sort = "fullName") Pageable pageable
     ) {
-        return ResponseEntity.ok(guestService.getGuestsByEvent(eventId, pageable));
+        return ResponseEntity.ok(
+                ApiResponse.success("Guests retrieved.", guestService.getGuestsByEvent(eventId, pageable))
+        );
     }
 
-    /**
-     * GET /api/guests/event/{eventId}/stats
-     * Returns RSVP counts per status — used by the dashboard and AI service.
-     */
     @GetMapping("/event/{eventId}/stats")
-    public ResponseEntity<EventGuestStatsResponse> getStats(@PathVariable UUID eventId) {
-        return ResponseEntity.ok(guestService.getEventStats(eventId));
+    public ResponseEntity<ApiResponse<EventGuestStatsResponse>> getStats(@PathVariable UUID eventId) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Guest stats retrieved.", guestService.getEventStats(eventId))
+        );
     }
 
     @GetMapping("/{guestId}")
-    public ResponseEntity<GuestResponse> getGuest(@PathVariable UUID guestId) {
-        return ResponseEntity.ok(guestService.getGuest(guestId));
+    public ResponseEntity<ApiResponse<GuestResponse>> getGuest(@PathVariable UUID guestId) {
+        return ResponseEntity.ok(
+                ApiResponse.success("Guest retrieved.", guestService.getGuest(guestId))
+        );
     }
 
+    // ── Mutations ─────────────────────────────────────────────────────────────
+
     @PutMapping("/{guestId}")
-    public ResponseEntity<GuestResponse> updateGuest(
+    public ResponseEntity<ApiResponse<GuestResponse>> updateGuest(
             @PathVariable UUID guestId,
             @RequestBody @Valid UpdateGuestRequest request
     ) {
-        return ResponseEntity.ok(guestService.updateGuest(guestId, request));
+        return ResponseEntity.ok(
+                ApiResponse.success("Guest updated.", guestService.updateGuest(guestId, request))
+        );
     }
 
-// Mutations
-    /**
-     * DELETE /api/guests/{guestId}
-     * Only allowed if the guest hasn't submitted an RSVP yet.
-     */
     @PatchMapping("/{guestId}/rsvp")
-    public ResponseEntity<GuestResponse> updateRsvp(
+    public ResponseEntity<ApiResponse<GuestResponse>> updateRsvp(
             @PathVariable UUID guestId,
             @RequestBody @Valid RsvpUpdateRequest request
     ) {
-        return ResponseEntity.ok(guestService.updateRsvp(guestId, request));
+        return ResponseEntity.ok(
+                ApiResponse.success("RSVP status updated.", guestService.updateRsvp(guestId, request))
+        );
     }
 
     @DeleteMapping("/{guestId}")
-    public ResponseEntity<Void> deleteGuest(@PathVariable UUID guestId) {
+    public ResponseEntity<ApiResponse<Void>> deleteGuest(@PathVariable UUID guestId) {
         guestService.deleteGuest(guestId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(204)
+                .body(ApiResponse.success("Guest removed."));
     }
 }

@@ -1,82 +1,38 @@
 package com.turnout.guestservice.exception;
 
 import com.turnout.common.dto.ApiResponse;
-import com.turnout.common.exception.*;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<?>> handleNotFound(ResourceNotFoundException ex) {
+    @ExceptionHandler(GuestNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleNotFound(GuestNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ApiResponse<?>> handleDuplicate(DuplicateResourceException ex) {
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<?>> handleIllegalState(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(UnauthorizedAccessException.class)
-    public ResponseEntity<ApiResponse<?>> handleUnauthorized(UnauthorizedAccessException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ex.getMessage()));
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<?>> handleFileTooLarge(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiResponse.error("File exceeds the 100MB limit"));
     }
 
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ApiResponse<?>> handleInvalidToken(InvalidTokenException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(EventCapacityException.class)
-    public ResponseEntity<ApiResponse<?>> handleCapacity(EventCapacityException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(TierLimitExceededException.class)
-    public ResponseEntity<ApiResponse<?>> handleTierLimit(TierLimitExceededException ex) {
-        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(TurnoutException.class)
-    public ResponseEntity<ApiResponse<?>> handleTurnout(TurnoutException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException ex) {
-        FieldError first = ex.getBindingResult().getFieldErrors().stream().findFirst().orElse(null);
-        String message = first != null
-                ? "Validation failed: " + first.getDefaultMessage()
-                : "Validation failed";
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(message));
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<?>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("Duplicate entry"));
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleGeneral(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<?>> handleRuntime(RuntimeException ex) {
+        log.error("Unhandled error: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred"));
     }

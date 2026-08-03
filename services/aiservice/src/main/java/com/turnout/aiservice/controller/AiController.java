@@ -1,5 +1,6 @@
 package com.turnout.aiservice.controller;
 
+import com.turnout.common.dto.ApiResponse;
 import com.turnout.aiservice.dto.AiRequests.*;
 import com.turnout.aiservice.dto.AiResponses.*;
 import com.turnout.aiservice.service.AiService;
@@ -18,52 +19,58 @@ public class AiController {
     }
 
     @PostMapping("/generate/description")
-    public ResponseEntity<?> generateDescription(
+    public ResponseEntity<ApiResponse<EventDescriptionResponse>> generateDescription(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody EventDescriptionRequest request) {
-        return toResponse(aiService.generateEventDescription(request));
+        EventDescriptionResponse result = aiService.generateEventDescription(request);
+        return toResponse(result, "Event description generated.");
     }
 
     @PostMapping("/generate/invitation")
-    public ResponseEntity<?> generateInvitation(
+    public ResponseEntity<ApiResponse<InvitationCopyResponse>> generateInvitation(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody InvitationCopyRequest request) {
-        return toResponse(aiService.generateInvitationCopy(request));
+        InvitationCopyResponse result = aiService.generateInvitationCopy(request);
+        return toResponse(result, "Invitation copy generated.");
     }
 
     @PostMapping("/generate/followup")
-    public ResponseEntity<?> generateFollowup(
+    public ResponseEntity<ApiResponse<FollowupResponse>> generateFollowup(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody FollowupRequest request) {
-        return toResponse(aiService.generateFollowup(request));
+        FollowupResponse result = aiService.generateFollowup(request);
+        return toResponse(result, "Follow-up suggestions generated.");
     }
 
     @PostMapping("/insights/event")
-    public ResponseEntity<?> getRsvpInsights(
+    public ResponseEntity<ApiResponse<RsvpInsightsResponse>> getRsvpInsights(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody RsvpInsightsRequest request) {
-        return toResponse(aiService.getRsvpInsights(request));
+        RsvpInsightsResponse result = aiService.getRsvpInsights(request);
+        return toResponse(result, "RSVP insights generated.");
     }
 
     @PostMapping("/predict/sendtime")
-    public ResponseEntity<?> predictSendTime(
+    public ResponseEntity<ApiResponse<SendTimeResponse>> predictSendTime(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody SendTimeRequest request) {
-        return toResponse(aiService.predictSendTime(request));
+        SendTimeResponse result = aiService.predictSendTime(request);
+        return toResponse(result, "Send time recommendation generated.");
     }
 
     @PostMapping("/predict/capacity")
-    public ResponseEntity<?> predictCapacity(
+    public ResponseEntity<ApiResponse<CapacityForecastResponse>> predictCapacity(
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody CapacityForecastRequest request) {
-        return toResponse(aiService.predictCapacity(request));
+        CapacityForecastResponse result = aiService.predictCapacity(request);
+        return toResponse(result, "Capacity forecast generated.");
     }
 
-    private ResponseEntity<?> toResponse(Object result) {
+    private <T> ResponseEntity<ApiResponse<T>> toResponse(T result, String successMessage) {
         if (result == null) {
             return ResponseEntity.status(503)
-                    .body(new ErrorResponse("AI service temporarily unavailable. Please try again."));
+                    .body(ApiResponse.error("AI service is temporarily unavailable. Please try again shortly."));
         }
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(ApiResponse.success(successMessage, result));
     }
 }

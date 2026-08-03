@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.turnout.common.dto.ApiResponse;
 
 @RestController
 @RequestMapping("/api/emails")
@@ -35,24 +36,24 @@ public class EmailController {
     private final JdbcTemplate jdbcTemplate;
 
     @PostMapping("/send-invitations")
-    public ResponseEntity<Map<String, Object>> sendInvitations(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> sendInvitations(@RequestBody Map<String, String> body) {
         String eventIdStr = body.get("eventId");
         if (eventIdStr == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "eventId is required"));
+            return ResponseEntity.badRequest().body(ApiResponse.error("eventId is required"));
         }
 
         UUID eventId;
         try {
             eventId = UUID.fromString(eventIdStr);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "eventId must be a valid UUID"));
+            return ResponseEntity.badRequest().body(ApiResponse.error("eventId must be a valid UUID"));
         }
 
         EventDetailsPayload eventDetails = fetchEventDetails(eventId);
         List<GuestEmailPayload> guests = fetchGuestsForEvent(eventId);
 
         if (guests.isEmpty()) {
-            return ResponseEntity.ok(Map.of("message", "No guests found for event", "queued", 0));
+            return ResponseEntity.ok(ApiResponse.success("Invitations queued for sending.", Map.of("message", "No guests found for event", "queued", 0)));
         }
 
         int queued = 0;
@@ -85,15 +86,11 @@ public class EmailController {
             }
         }
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Invitations queued",
-                "queued", queued,
-                "total", guests.size()
-        ));
+        return ResponseEntity.status(202).body(ApiResponse.success("Invitations queued for sending.", Map.of("queued", queued, "total", guests.size())));
     }
 
     @PostMapping("/resend/{guestId}")
-    public ResponseEntity<Map<String, String>> resend(@PathVariable String guestId) {
+    public ResponseEntity<ApiResponse<Void>> resend(@PathVariable String guestId) {
         List<EmailLog> previousLogs = emailLogRepository.findByGuestIdOrderByAttemptedAtDesc(guestId);
         if (previousLogs.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -125,28 +122,26 @@ public class EmailController {
                 eventDetails
         );
 
-        return ResponseEntity.ok(Map.of("message", "Re-send triggered for guest " + guestId));
+        return ResponseEntity.ok(ApiResponse.success("Invitation resent.", null));
     }
 
     @GetMapping("/logs/event/{eventId}")
-    public ResponseEntity<Page<EmailLog>> logsByEvent(
+    public ResponseEntity<ApiResponse<Page<EmailLog>>> logsByEvent(
             @PathVariable UUID eventId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(
-                emailLogRepository.findByEventIdOrderByAttemptedAtDesc(eventId, pageable));
+        return ResponseEntity.ok(ApiResponse.success("Email logs retrieved.", emailLogRepository.findByEventIdOrderByAttemptedAtDesc(eventId, pageable)));
     }
 
     @GetMapping("/logs/guest/{guestId}")
-    public ResponseEntity<List<EmailLog>> logsByGuest(@PathVariable String guestId) {
-        return ResponseEntity.ok(
-                emailLogRepository.findByGuestIdOrderByAttemptedAtDesc(guestId));
+    public ResponseEntity<ApiResponse<List<EmailLog>>> logsByGuest(@PathVariable String guestId) {
+        return ResponseEntity.ok(ApiResponse.success("Email logs retrieved.", emailLogRepository.findByGuestIdOrderByAttemptedAtDesc(guestId)));
     }
 
     @GetMapping("/progress/{eventId}")
-    public ResponseEntity<EmailProgressResponse> progress(@PathVariable UUID eventId) {
+    public ResponseEntity<ApiResponse<EmailProgressResponse>> progress(@PathVariable UUID eventId) {
         List<Object[]> rows = emailLogRepository.countByStatusForEvent(eventId);
 
         Map<String, Long> counts = rows.stream()
@@ -159,13 +154,13 @@ public class EmailController {
         long sent   = counts.getOrDefault("SUCCESS", 0L);
         long failed = counts.getOrDefault("FAILED", 0L);
 
-        return ResponseEntity.ok(EmailProgressResponse.builder()
+        return ResponseEntity.ok(ApiResponse.success("Email progress retrieved.", EmailProgressResponse.builder()
                 .eventId(eventId)
                 .queued(queued)
                 .sent(sent)
                 .failed(failed)
                 .total(queued + sent + failed)
-                .build());
+                .build()));
     }
 
     private EventDetailsPayload fetchEventDetails(UUID eventId) {

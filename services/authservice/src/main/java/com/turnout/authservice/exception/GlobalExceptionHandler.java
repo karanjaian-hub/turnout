@@ -4,7 +4,6 @@ import com.turnout.common.dto.ApiResponse;
 import com.turnout.common.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,15 +16,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<?>> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ApiResponse<?>> handleDuplicate(DuplicateResourceException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
@@ -38,18 +37,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiResponse<?>> handleInvalidToken(InvalidTokenException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(EventCapacityException.class)
-    public ResponseEntity<ApiResponse<?>> handleCapacity(EventCapacityException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(TierLimitExceededException.class)
-    public ResponseEntity<ApiResponse<?>> handleTierLimit(TierLimitExceededException ex) {
-        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
@@ -75,12 +62,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(message));
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<?>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("Duplicate entry"));
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleGeneral(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), ex);
@@ -88,4 +69,3 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("An unexpected error occurred"));
     }
 }
-

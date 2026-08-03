@@ -1,5 +1,6 @@
 package com.turnout.notificationservice.controller;
 
+import com.turnout.common.dto.ApiResponse;
 import com.turnout.notificationservice.dto.SystemHealthResponse;
 import com.turnout.notificationservice.service.SystemHealthService;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,13 @@ public class SystemHealthController {
     private static final String ROLE_SUPER_ADMIN = "SUPER_ADMIN";
 
     @GetMapping("/system-health")
-    public ResponseEntity<SystemHealthResponse> getSystemHealth(
+    public ResponseEntity<ApiResponse<SystemHealthResponse>> getSystemHealth(
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String userRole) {
 
         requireAdminRole(userRole);
-        return ResponseEntity.ok(systemHealthService.checkAll());
+        return ResponseEntity.ok(ApiResponse.success("System health retrieved.",
+                systemHealthService.checkAll()));
     }
 
     private void requireAdminRole(String userRole) {
