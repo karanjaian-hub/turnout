@@ -19,7 +19,7 @@ COPY shared/common-dto/src shared/common-dto/src
 COPY shared/common-exceptions/src shared/common-exceptions/src
 
 # Copy only the target service source
-ARG SERVICE_PATH
+ARG SERVICE_PATH=services/emailservice
 COPY ${SERVICE_PATH}/src ${SERVICE_PATH}/src
 
 # Install shared modules then build the target service
@@ -33,7 +33,7 @@ WORKDIR /app
 RUN addgroup -S turnout && adduser -S turnout -G turnout
 USER turnout
 
-ARG SERVICE_PATH
+ARG SERVICE_PATH=services/emailservice
 COPY --from=builder /app/${SERVICE_PATH}/target/*.jar app.jar
 
 EXPOSE 8080
