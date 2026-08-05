@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import api, { setAccessToken } from '../services/api';
+import api, { setAccessToken, setRefreshToken } from '../services/api';
 import { AuthUser, AuthResponse, UserResponse } from '../types/auth';
 
 // ─── Context shape ────────────────────────────────────────────────────────────
@@ -42,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data } = await api.post<AuthResponse>('/api/auth/refresh', {});
         setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
         await loadCurrentUser();
       } catch {
         // No valid session — user will need to log in manually
@@ -78,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
     await loadCurrentUser();
   };
 
@@ -89,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Even if the server call fails, clear client state
     } finally {
       setAccessToken(null);
+      setRefreshToken(null);
       setUser(null);
     }
   };

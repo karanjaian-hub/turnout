@@ -50,10 +50,9 @@ public class RsvpService {
 
         UUID guestId  = UUID.fromString(claims.get("guestId", String.class));
         UUID eventId  = UUID.fromString(claims.get("eventId", String.class));
-        boolean tokenUsed = Boolean.TRUE.equals(claims.get("tokenUsed", Boolean.class));
+        GuestStatus guestStatus = fetchGuestStatus(guestId);
 
         EventDetails eventDetails = fetchEventDetails(eventId);
-        String currentStatus = tokenUsed ? fetchCurrentRsvpStatus(guestId) : null;
 
         return new ValidateTokenResponse(
                 true,
@@ -63,8 +62,8 @@ public class RsvpService {
                 eventDetails.title(),
                 eventDetails.eventDate(),
                 eventDetails.location(),
-                tokenUsed,
-                currentStatus
+                guestStatus.tokenUsed(),
+                guestStatus.tokenUsed() ? guestStatus.rsvpStatus() : null
         );
     }
 
@@ -206,11 +205,13 @@ public class RsvpService {
                     eventId
             );
             if (response == null) throw new ResourceNotFoundException("Event not found: " + eventId);
+            Map<String, Object> data = (Map<String, Object>) response.get("data");
+            if (data == null) throw new ResourceNotFoundException("Event not found: " + eventId);
 
             return new EventDetails(
-                    (String) response.get("title"),
-                    LocalDateTime.parse((String) response.get("eventDate")),
-                    (String) response.get("location")
+                    (String) data.get("title"),
+                    LocalDateTime.parse((String) data.get("eventDate")),
+                    (String) data.get("location")
             );
         } catch (RestClientException e) {
             log.error("Failed to fetch event details for {}: {}", eventId, e.getMessage());
@@ -227,10 +228,12 @@ public class RsvpService {
                     eventId
             );
             if (response == null) throw new ResourceNotFoundException("Event not found: " + eventId);
+            Map<String, Object> data = (Map<String, Object>) response.get("data");
+            if (data == null) throw new ResourceNotFoundException("Event not found: " + eventId);
 
             return new EventCapacity(
-                    ((Number) response.get("currentConfirmed")).intValue(),
-                    ((Number) response.get("maxCapacity")).intValue()
+                    ((Number) data.get("currentConfirmed")).intValue(),
+                    ((Number) data.get("maxCapacity")).intValue()
             );
         } catch (RestClientException e) {
             log.error("Failed to fetch capacity for event {}: {}", eventId, e.getMessage());
@@ -238,14 +241,30 @@ public class RsvpService {
         }
     }
 
-    private String fetchCurrentRsvpStatus(UUID guestId) {
-        // TODO: guestRepository.findById(guestId).map(g -> g.getRsvpStatus().name()).orElse(null)
-        return "UNKNOWN";
+    @SuppressWarnings("unchecked")
+    private GuestStatus fetchGuestStatus(UUID guestId) {
+        try {
+            Map<String, Object> response = restTemplate.getForObject(
+                    "http://guestservice:8083/api/guests/{guestId}",
+                    Map.class,
+                    guestId
+            );
+            if (response == null) throw new ResourceNotFoundException("Guest not found: " + guestId);
+            Map<String, Object> data = (Map<String, Object>) response.get("data");
+            if (data == null) throw new ResourceNotFoundException("Guest not found: " + guestId);
+            boolean tokenUsed = Boolean.TRUE.equals(data.get("tokenUsed"));
+            String rsvpStatus = (String) data.get("rsvpStatus");
+            return new GuestStatus(tokenUsed, rsvpStatus);
+        } catch (RestClientException e) {
+            log.error("Failed to fetch guest status for {}: {}", guestId, e.getMessage());
+            throw new ResourceNotFoundException("Could not load guest status.");
+        }
     }
 
     // INNER RECORDS
     private record EventDetails(String title, LocalDateTime eventDate, String location) {}
     private record EventCapacity(int currentConfirmed, int maxCapacity) {}
+    private record GuestStatus(boolean tokenUsed, String rsvpStatus) {}
 
 
     // INLINE EXCEPTIONS

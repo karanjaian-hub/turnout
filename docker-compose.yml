@@ -8,7 +8,7 @@ volumes:
 
 services:
 
-# Infrastructure
+  # Infrastructure
   postgres:
     image: postgres:15-alpine
     container_name: turnout_postgres
@@ -87,7 +87,7 @@ services:
     networks:
       - turnout-network
 
-# ── Application Services ────────────────────────────────────────────────────
+  # ── Application Services ────────────────────────────────────────────────────
   api-gateway:
     build:
       context: .
@@ -269,6 +269,8 @@ services:
       DB_USERNAME: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       BREVO_API_KEY: ${BREVO_API_KEY}
       BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
       BREVO_SENDER_NAME: ${BREVO_SENDER_NAME}
@@ -278,6 +280,8 @@ services:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - turnout-network

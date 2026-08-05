@@ -29,6 +29,13 @@ spring:
       properties:
         fetch.max.bytes: 1048576
         max.partition.fetch.bytes: 1048576
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      lettuce:
+        pool:
+          max-active: 8
 server:
   port: 8084
 brevo:

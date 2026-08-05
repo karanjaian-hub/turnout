@@ -1,20 +1,19 @@
 import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
 // ─── In-memory token store ────────────────────────────────────────────────────
-// The access token NEVER touches localStorage or sessionStorage.
-// It lives here — wiped on page refresh, which forces a silent refresh via cookie.
-let accessToken: string | null = null;
+// Access token lives in memory — never localStorage (XSS risk).
+// Refresh token also stored in memory since the backend no longer uses httpOnly cookies.
+let accessToken:  string | null = null;
+let refreshToken: string | null = null;
 
-export const setAccessToken = (token: string | null): void => {
-  accessToken = token;
-};
-
-export const getAccessToken = (): string | null => accessToken;
+export const setAccessToken  = (token: string | null): void => { accessToken  = token; };
+export const setRefreshToken = (token: string | null): void => { refreshToken = token; };
+export const getAccessToken  = (): string | null => accessToken;
+export const getRefreshToken = (): string | null => refreshToken;
 
 // ─── Axios instance ───────────────────────────────────────────────────────────
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
-  // Send cookies (refresh token httpOnly cookie) on every request
   withCredentials: true,
 });
 
@@ -26,40 +25,46 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-// ─── Response interceptor: silent token refresh on 401 ───────────────────────
-// We use a flag to prevent infinite retry loops if the refresh endpoint itself
-// returns a 401 (e.g. refresh token expired — user must log in again).
+// ─── Response interceptor ─────────────────────────────────────────────────────
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
-// When a refresh completes, replay all requests that queued up while waiting
 const onRefreshComplete = (token: string): void => {
-  refreshSubscribers.forEach(callback => callback(token));
+  refreshSubscribers.forEach(cb => cb(token));
   refreshSubscribers = [];
 };
 
-// Queue a failed request to be retried once the refresh resolves
 const addRefreshSubscriber = (callback: (token: string) => void): void => {
   refreshSubscribers.push(callback);
 };
 
+// Unwrap the ApiResponse envelope — { status, message, data: T } -> T
+const unwrap = (data: any): any => {
+  if (data && data.status === 1 && 'data' in data) return data.data;
+  return data;
+};
+
 api.interceptors.response.use(
-  // Happy path — just pass the response through
-  response => response,
+  // Happy path — unwrap the ApiResponse envelope globally
+  // Before: api.get('/foo') returned { success, message, data: {...} }
+  // After:  api.get('/foo') returns {...} directly
+  response => {
+    response.data = unwrap(response.data);
+    return response;
+  },
 
   async error => {
     const originalRequest: AxiosRequestConfig & { _retry?: boolean } = error.config;
 
-    // Only attempt refresh on 401, and only once per request
-    const is401 = error.response?.status === 401;
-    const alreadyRetried = originalRequest._retry;
+    const is401             = error.response?.status === 401;
+    const alreadyRetried    = originalRequest._retry;
     const isRefreshEndpoint = originalRequest.url?.includes('/api/auth/refresh');
 
     if (!is401 || alreadyRetried || isRefreshEndpoint) {
       return Promise.reject(error);
     }
 
-    // If a refresh is already in flight, queue this request behind it
+    // Queue requests behind an in-flight refresh
     if (isRefreshing) {
       return new Promise(resolve => {
         addRefreshSubscriber((newToken: string) => {
@@ -72,28 +77,36 @@ api.interceptors.response.use(
       });
     }
 
-    // We're the first 401 — kick off the refresh
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
-      // The refresh token is in an httpOnly cookie — withCredentials sends it
-      const { data } = await api.post('/api/auth/refresh', {});
-      const newToken: string = data.accessToken;
+      // Send refresh token in request body — backend requires { refreshToken: "..." }
+      const storedRefreshToken = refreshToken;
+      if (!storedRefreshToken) throw new Error('No refresh token available');
 
-      setAccessToken(newToken);
-      onRefreshComplete(newToken);
+      const { data } = await api.post('/api/auth/refresh', {
+        refreshToken: storedRefreshToken,
+      });
 
-      // Retry the original request with the new token
+      // Unwrap envelope — new token may be at data.accessToken or data.data.accessToken
+      // The response interceptor above already unwrapped it, so just read data.accessToken
+      const newAccessToken: string  = data.accessToken;
+      const newRefreshToken: string = data.refreshToken ?? storedRefreshToken;
+
+      setAccessToken(newAccessToken);
+      setRefreshToken(newRefreshToken);
+      onRefreshComplete(newAccessToken);
+
       originalRequest.headers = {
         ...originalRequest.headers,
-        Authorization: `Bearer ${newToken}`,
+        Authorization: `Bearer ${newAccessToken}`,
       };
       return api(originalRequest);
 
     } catch (refreshError) {
-      // Refresh failed — session is dead, force logout
       setAccessToken(null);
+      setRefreshToken(null);
       refreshSubscribers = [];
       window.dispatchEvent(new CustomEvent('auth:logout'));
       return Promise.reject(refreshError);
