@@ -15,6 +15,7 @@ export const getRefreshToken = (): string | null => refreshToken;
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
   withCredentials: true,
+  timeout: 30000, // 30s — accounts for Render cold start
 });
 
 // ─── Request interceptor: attach access token ────────────────────────────────
@@ -56,6 +57,11 @@ api.interceptors.response.use(
   async error => {
     const originalRequest: AxiosRequestConfig & { _retry?: boolean } = error.config;
 
+    const is429             = error.response?.status === 429;
+    if (is429) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return api(originalRequest);
+    }
     const is401             = error.response?.status === 401;
     const alreadyRetried    = originalRequest._retry;
     const isRefreshEndpoint = originalRequest.url?.includes('/api/auth/refresh');
