@@ -96,7 +96,7 @@ public class EmailDispatchService {
     }
 
     private String buildInvitationHtml(String recipientName, UUID eventId, String guestToken, EventDetailsPayload eventDetails) {
-        String rsvpUrl = "https://turnout-git-main-karanja-ia.vercel.app/rsvp?token=" + (guestToken != null ? guestToken : "unknown");
+        String rsvpUrl = "https://turnout-nine.vercel.app/rsvp?token=" + (guestToken != null ? guestToken : "unknown");
 
         String eventCardHtml;
         if (eventDetails != null) {
