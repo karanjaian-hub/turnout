@@ -4,13 +4,10 @@ import java.util.UUID;
 
 public record EventStatsResponse(
         UUID eventId,
-        long totalInvited,
+        long total,
         long confirmed,
         long declined,
         long maybe,
         long pending,
-        long waitlisted,
-        double confirmationRate,
-        int capacity,
-        int currentRsvpCount
+        long waitlisted
 ) {}

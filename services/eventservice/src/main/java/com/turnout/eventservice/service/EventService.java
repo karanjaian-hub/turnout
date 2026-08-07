@@ -168,12 +168,20 @@ public class EventService {
             return deserializeStats(cached);
         }
 
-        EventStatsResponse stats = webClientBuilder.build()
+        // Guestservice wraps its response in ApiResponse<EventStatsResponse>
+        // Extract the data field from the envelope
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> envelope = webClientBuilder.build()
                 .get()
                 .uri("http://guestservice:8083/api/guests/event/{eventId}/stats", eventId)
                 .retrieve()
-                .bodyToMono(EventStatsResponse.class)
+                .bodyToMono(java.util.Map.class)
                 .block();
+
+        EventStatsResponse stats = null;
+        if (envelope != null && envelope.get("data") instanceof java.util.Map<?,?> data) {
+            stats = objectMapper.convertValue(data, EventStatsResponse.class);
+        }
 
         if (stats != null) {
             redisTemplate.opsForValue().set(cacheKey, serializeStats(stats), Duration.ofSeconds(10));

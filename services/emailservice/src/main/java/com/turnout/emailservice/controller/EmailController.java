@@ -204,7 +204,8 @@ public class EmailController {
                     .retrieve()
                     .bodyToMono(PagedGuestResponse.class)
                     .block();
-            return guests != null && guests.getContent() != null ? guests.getContent() : List.of();
+            return guests != null && guests.getData() != null && guests.getData().getContent() != null
+                    ? guests.getData().getContent() : List.of();
         } catch (Exception e) {
             log.error("Failed to fetch guests for event {}: {}", eventId, e.getMessage());
             return List.of();
